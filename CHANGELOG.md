@@ -5,6 +5,14 @@ All notable changes to this commercial fork of Toonflow will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - Final cut assembly (Spec 02 Phase 1)
+
+### Added
+- **Cut sequence module** (`apps/server/src/utils/sequences/`): `sequences/{id}.json` documents, optimistic concurrency via `expectedRevision` (409 on stale), media probing via ffprobe, timeline builder.
+- **REST routes**: `POST /api/sequences/create`, `GET /api/sequences/read`, `POST /api/sequences/patch`, `POST /api/sequences/render`.
+- **FFmpeg master render**: concat + xfade (hard_cut, cross_dissolve, fade_black, fade_white), per-clip trim/scale/pad to uniform 30fps, audio concat/acrossfade with silence filler for clips without audio, voiceover attach (adelay to clip start), BGM gain mix, loudnorm -16 LUFS, ASS subtitle burn-in with CJK-aware wrapping. Per-workspace render mutex.
+- Verified: 2 clips + Vietnamese subtitle + 0.7s cross_dissolve → 9.3s 720p master mp4, subtitle burns correctly, 409 on stale revision.
+
 ## [Unreleased] - Muse.ai integration
 
 ### Added

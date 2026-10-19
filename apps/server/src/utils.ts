@@ -7,6 +7,7 @@ import * as mediaGeneration from "@/utils/media/generation";
 import * as mediaProvider from "@/utils/media/provider";
 import * as mediaBilling from "@/utils/media/billing";
 import * as ffmpeg from "@/utils/ffmpeg";
+import * as sequences from "@/utils/sequences";
 import * as pluginInstall from "@/utils/plugins/install";
 import conf, { cleanNodeMenuSettings, removeLegacySettings } from "@/utils/conf";
 import * as ai from "@/utils/ai";
@@ -38,6 +39,7 @@ export default {
   mediaProvider,
   mediaBilling,
   ffmpeg,
+  sequences,
   pluginInstall,
   conf,
   cleanNodeMenuSettings,
