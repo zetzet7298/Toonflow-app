@@ -28,7 +28,7 @@ export default {
   label: "ElevenLabs",
   icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSI+PHJlY3Qgd2lkdGg9IjI0IiBoZWlnaHQ9IjI0IiByeD0iNiIgZmlsbD0iIzExMTEzMSIvPjxwYXRoIGQ9Ik03IDZoNHYxMkg3ek0xMyA2aDR2MTJoLTR6IiBmaWxsPSIjZmZmIi8+PC9zdmc+",
   version,
-  readme: `## ElevenLabs TTS\n\n通过官方 REST API 合成语音。\n\n- 在 [ElevenLabs Developers → API Keys](https://elevenlabs.io/app/developers/api-keys) 创建密钥并粘贴到 API Key 字段。\n- 模型：\`eleven_multilingual_v2\`（多语言，适合中文/越南语）与 \`eleven_turbo_v2_5\`（低延迟）。\n- 支持参考音色 \`voice\`：填写 ElevenLabs voice_id（如 \`21m00Tcm4TlvDq8ikWAM\` = Rachel）。`,
+  readme: `## ElevenLabs TTS\n\n通过官方 REST API 合成语音。\n\n- 在 [ElevenLabs Developers → API Keys](https://elevenlabs.io/app/developers/api-keys) 创建密钥并粘贴到 API Key 字段。\n- 模型：\`eleven_multilingual_v2\`（多语言，适合中文/越南语）与 \`eleven_turbo_v2_5\`（低延迟）。\n- 支持参考音色 \`voice\`：填写 ElevenLabs voice_id（如 \`21m00Tcm4TlvDq8ikWAM\` = Rachel）。\n\n### Giọng tiếng Việt hay (Voice Library đã add sẵn)\n\n- \`ObhtJZSfI8Ps4i8lwyVx\` — **Minh Son**: giọng nam Bắc, kiểu commentary/quảng cáo/explainer.\n- \`YeV2u3R2gzLArVTYTis8\` — **Tuan Anh**: giọng nam Bắc trầm ấm, kể chuyện.\n- \`ueSxRO0nLF1bj93J2hVt\` — **Trung Caha**: giọng nam Bắc rõ ràng, informative (public library, add qua \`POST /v1/voices/add/{public_id}/{voice_id}\`).\n\nĐể add giọng Voice Library khác: \`POST /v1/voices/add/{public_user_id}/{voice_id}\` body \`{\\"new_name\\":\\"...\\"}\`.`,
   rules,
   models: [
     {
