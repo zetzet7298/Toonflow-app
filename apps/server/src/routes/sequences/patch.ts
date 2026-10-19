@@ -12,6 +12,7 @@ const inputSchema = z.object({
   expectedRevision: z.number().int().nonnegative(),
   updatedBy: z.enum(["user", "agent"]).optional(),
   title: z.string().max(256).optional(),
+  subtitleColor: z.string().regex(/^&H[0-9A-Fa-f]{8}$/).optional(),
   clips: z.array(cutClipItemSchema).max(512).optional(),
   subtitles: z.array(subtitleCueSchema).max(2000).optional(),
   bgm: bgmPlacementSchema.nullable().optional(),

@@ -13,6 +13,7 @@ const inputSchema = z.object({
   clips: z.array(cutClipItemSchema).max(512).optional(),
   subtitles: z.array(subtitleCueSchema).max(2000).optional(),
   bgm: bgmPlacementSchema.optional(),
+  subtitleColor: z.string().regex(/^&H[0-9A-Fa-f]{8}$/).optional(),
 });
 
 export default Router().post("/", validateFields(inputSchema.shape), async (req, res) => {

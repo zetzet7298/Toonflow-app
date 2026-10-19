@@ -56,6 +56,8 @@ export const sequenceDocumentSchema = z.strictObject({
   clips: z.array(cutClipItemSchema).max(512).default([]),
   subtitles: z.array(subtitleCueSchema).max(2000).default([]),
   bgm: bgmPlacementSchema.optional(),
+  // ASS hex BGR e.g. "&H0000D7FF" for yellow; default white
+  subtitleColor: z.string().regex(/^&H[0-9A-Fa-f]{8}$/).optional(),
 });
 export type CutSequenceDocument = z.infer<typeof sequenceDocumentSchema>;
 export type CutClipItem = z.infer<typeof cutClipItemSchema>;
@@ -96,7 +98,7 @@ export async function readSequence(cwd: string, sequenceId: string) {
   return { document: doc, readout: buildReadout(doc) };
 }
 
-export async function patchSequence(cwd: string, sequenceId: string, expectedRevision: number, patch: Partial<Pick<CutSequenceDocument, "clips" | "subtitles" | "bgm" | "title">>, updatedBy: "user" | "agent" = "user") {
+export async function patchSequence(cwd: string, sequenceId: string, expectedRevision: number, patch: Partial<Pick<CutSequenceDocument, "clips" | "subtitles" | "bgm" | "title" | "subtitleColor">>, updatedBy: "user" | "agent" = "user") {
   const { path } = await resolveWorkspacePath(cwd, seqFilePath(sequenceId), true).catch((error: NodeJS.ErrnoException) => {
     if (error.code === "ENOENT" || error.code === "ENOTDIR") invalid("序列不存在", 404);
     throw error;
@@ -235,7 +237,7 @@ function wrapCue(text: string, maxCharsPerLine = 22) {
   return lines;
 }
 
-export function buildAss(cues: SubtitleCue[], width = 1920, height = 1080) {
+export function buildAss(cues: SubtitleCue[], width = 1920, height = 1080, primaryColour = "&H00FFFFFF") {
   const fontSize = Math.max(24, Math.round(height / 22));
   const marginV = Math.round(height / 12);
   const body = cues.map(cue => {
@@ -251,7 +253,7 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Noto Sans CJK SC,${fontSize},&H00FFFFFF,&H00FFFFFF,&H80000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,60,60,${marginV},1
+Style: Default,Noto Sans CJK SC,${fontSize},${primaryColour},${primaryColour},&H80000000,&H80000000,0,0,0,0,100,100,0,0,1,2,1,2,60,60,${marginV},1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -412,7 +414,7 @@ export async function renderSequence(cwd: string, request: RenderRequest, signal
     let finalVideo = videoOut;
     if (request.burnSubtitles !== false && doc.subtitles.length) {
       assFile = join(tmpdir(), `toonflow-sub-${randomUUID()}.ass`);
-      await writeAtomic(assFile, buildAss(doc.subtitles, width, height));
+      await writeAtomic(assFile, buildAss(doc.subtitles, width, height, doc.subtitleColor ?? "&H00FFFFFF"));
       const escaped = assFile.replace(/\\/g, "/").replace(/:/g, "\\:").replace(/'/g, "\\'");
       filters.push({ filter: "ass", options: `filename='${escaped}'`, inputs: videoOut, outputs: "vsub" });
       finalVideo = "vsub";
