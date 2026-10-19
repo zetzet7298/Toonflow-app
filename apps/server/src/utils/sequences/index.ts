@@ -34,6 +34,9 @@ export const cutClipItemSchema = z.strictObject({
   transitionAfter: transitionKind.default("hard_cut"),
   transitionDurationSec: z.number().nonnegative().max(10).default(0),
   attachVoiceover: z.string().max(2048).optional(),
+  // dB gain on clip's own audio. Omitted: -16 when voiceover attached (music
+  // under narration), else 0.
+  audioGainDb: z.number().min(-60).max(12).optional(),
 });
 export const subtitleCueSchema = z.strictObject({
   text: z.string().min(1).max(10000),
@@ -164,6 +167,7 @@ export interface TimelineClip extends ClipProbe {
   transitionAfter: TransitionKind;
   transitionDurationSec: number;
   attachVoiceover?: string;
+  audioGainDb?: number;
 }
 
 export function buildTimeline(doc: CutSequenceDocument, probes: ClipProbe[]): { clips: TimelineClip[]; totalDuration: number; warnings: string[] } {
@@ -188,6 +192,7 @@ export function buildTimeline(doc: CutSequenceDocument, probes: ClipProbe[]): { 
       ...probe, clipIndex: index, inSec, outSec, durationSec, startSec: cursor,
       transitionAfter: clip.transitionAfter, transitionDurationSec: clip.transitionDurationSec,
       attachVoiceover: clip.attachVoiceover,
+      audioGainDb: clip.audioGainDb,
     };
     cursor += durationSec;
     return result;
@@ -350,7 +355,12 @@ export async function renderSequence(cwd: string, request: RenderRequest, signal
         filters.push({ filter: "atrim", options: { start: clip.inSec, end: clip.outSec }, inputs: `${i}:a`, outputs: `${label}t` });
         filters.push({ filter: "asetpts", options: "PTS-STARTPTS", inputs: `${label}t`, outputs: `${label}s` });
         filters.push({ filter: "aresample", options: "48000", inputs: `${label}s`, outputs: `${label}r` });
-        filters.push({ filter: "aformat", options: { channel_layouts: "stereo", sample_rates: "48000" }, inputs: `${label}r`, outputs: label });
+        // ACT: constant gain (ducking MVP) — clip audio sits under voiceover.
+        // Upgrade path: sidechaincompress keyed on the voiceover bus.
+        const gain = clip.audioGainDb ?? (clip.attachVoiceover ? -16 : 0);
+        const src = gain !== 0 ? `${label}g` : `${label}r`;
+        if (gain !== 0) filters.push({ filter: "volume", options: { volume: `${gain}dB` }, inputs: `${label}r`, outputs: `${label}g` });
+        filters.push({ filter: "aformat", options: { channel_layouts: "stereo", sample_rates: "48000" }, inputs: src, outputs: label });
       } else {
         filters.push({ filter: "anullsrc", options: { r: "48000", cl: "stereo" }, outputs: `${label}n` });
         filters.push({ filter: "atrim", options: { duration: clip.durationSec }, inputs: `${label}n`, outputs: `${label}s` });
