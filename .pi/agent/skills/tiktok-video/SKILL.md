@@ -1,13 +1,15 @@
 ---
 name: tiktok-video
-description: Generate a short TikTok/Reel video with an AI character (face or faceless), Vietnamese TTS voiceover, and burned subtitles through Toonflow's /api pipeline. Use when the user asks to create a TikTok clip, a short video for the character channel, or wants a story/narration rendered to video. Trigger also on phrases like "làm video TikTok", "gen clip", "làm ep mới".
+description: Generate a short TikTok/Reel storytelling video for the AI-character channel — faceless or back/silhouette shots, Vietnamese TTS voiceover, yellow burned subtitles. Use when the user asks to create a TikTok clip, a story video, or a new episode for the character. Trigger on phrases like "làm video TikTok", "gen clip", "làm ep mới", "story video".
 ---
 
 # TikTok video pipeline
 
-End-to-end generation of a 15–60s vertical video for the Toonflow AI-character channel.
+End-to-end generation of a 30–60s vertical storytelling video for the Toonflow AI-character channel.
 
-All steps go through the running Toonflow dev server at `http://localhost:3000` (`bun --watch src/index.ts` in `apps/server`). Every request needs headers:
+Style reference: `data/workspaces/museTest/character/ep02/final.mp4` — back-view/silhouette character, ambient b-roll, yellow subs, reflective narration.
+
+All steps go through the running Toonflow dev server at `http://localhost:3000` (`bun src/index.ts` in `apps/server`). Every request needs headers:
 
 ```
 Origin: http://localhost:3000
@@ -17,71 +19,64 @@ Content-Type: application/json
 
 `directory` in every body = absolute workspace path, e.g. `C:\Projects\Toonflow-app\data\workspaces\museTest`.
 
-## Assets that already exist
+## Style rules (locked from ep02)
 
-| Asset | Path / ID | Purpose |
+- **Face never fully visible.** Accepted angles: back of head, silhouette, hands-only, extreme profile (<20% face). The character may appear — just not front-on.
+- **One location per video** (home office preferred). If location changes, only at the last shot as a deliberate transition.
+- **Voiceover tells the story**; the visuals are moody b-roll around it — not "character talking to camera".
+- **Subtitles**: yellow (`&H0000D7FF`), burned in, centered, sentence-length lines.
+- **Pacing**: 4–6 shots, 6–8s each, hard cuts. Total 30–45s.
+
+## Assets
+
+| Asset | Path / ID | Use |
 |---|---|---|
-| Character avatar (default) | `character/anhtuan-avatar.jpg` | firstFrame ref — smiling, black t-shirt, cafe |
-| Serious variant | `character/avatars/image622aa74f-…webp` | neutral/concerned mood |
-| Tired variant | `character/avatars/image44057a63-…webp` | burnout/night mood |
-| Office variant | `character/avatars/image12662f11-…webp` | navy shirt, office |
-| Street variant | `character/avatars/image159a790a-…webp` | hoodie, outdoor |
-| Home variant | `character/avatars/image12c76837-…webp` | white tee, home |
-| Cloned VN voice | `uQaF7frJAAaUmrw6flbw` | "Anh Tuan - Narrator" instant clone |
-| VN library voices | `ObhtJZSfI8Ps4i8lwyVx` (Minh Son), `YeV2u3R2gzLArVTYTis8` (Tuan Anh) | alternates |
+| Default avatar | `character/anhtuan-avatar.jpg` | firstFrame ref when a person must appear |
+| Serious variant | `character/avatars/image622aa74f-…webp` | contemplative shots |
+| Tired variant | `character/avatars/image44057a63-…webp` | night/burnout mood |
+| Office / street / home variants | `character/avatars/*.webp` | outfit/context rotation |
+| VN narrator voice | `uQaF7frJAAaUmrw6flbw` | "Anh Tuan" instant clone |
+| Library alternates | `ObhtJZSfI8Ps4i8lwyVx` (Minh Son), `YeV2u3R2gzLArVTYTis8` (Tuan Anh) | |
 
 ## Steps
 
-### 1. Write the script (Vietnamese narration + shot list)
+### 1. Script — Vietnamese narration (~8–11s per shot)
 
-Keep total narration ≈ 8–11s per shot. Write narration first, then pick matching shots.
+Write narration first; pick shots to match. Example arc (ep02): setup → price of dreams → examples → turn/insight.
 
-Good narration length per clip: 8–11s spoken (~25–35 words Vietnamese). Get exact duration after TTS with `ffprobe` — narration drives `subtitles` timing and clip `outSec`.
+### 2. Generate shots
 
-### 2. Generate each shot
-
-`POST /api/ai/media/generate` with:
+`POST /api/ai/media/generate`:
 
 ```json
 {
-  "directory": "<abs workspace>",
+  "directory": "<abs>",
   "mediaType": "video",
   "providerId": "muse",
   "modelId": "muse-video",
-  "prompt": "<scene> — ambient only, no music, no speech, no dialogue",
+  "prompt": "<scene description, e.g. 'Vietnamese man in black t-shirt sitting at desk seen from behind, home office, window light'> — ambient only, no music, no speech, no dialogue",
   "duration": 8,
   "ratio": "9:16",
   "resolution": "720p",
-  "firstFrame": {"path": "character/anhtuan-avatar.jpg", "mimeType": "image/jpeg"},
   "outputDirectory": "character/<epXX>"
 }
 ```
 
-Rules learned the hard way:
+Add `"firstFrame": {"path":"character/anhtuan-avatar.jpg","mimeType":"image/jpeg"}` **only for shots where the person appears** (to keep identity). For pure object/ambient b-roll, omit it.
 
-- **Never write "talking/speaking/presenting"** in the prompt — muse will synthesize speech in a random voice. Describe a *silent action*: `sits down`, `types`, `looks out window`, `rests chin on hand`, `writes in notebook`.
-- **Face control**: default avatar gives a natural smile. For serious/neutral moods use `character/avatars/image622aa74f-…webp` as firstFrame. Avoid exaggerated emotion prompts (`tired`, `crying`) — muse drifts the face.
-- **Skip `firstFrame` for pure b-roll** (books, coffee, hands-only objects) — no need to preserve the face and it saves tokens/time.
-- **One location per video.** Mixing cafe → home-office mid-video reads as an AI cut. If the story changes location, put it at the END as a deliberate transition (e.g. last shot = walking out).
-- muse.video takes ~60s/shot; if a call times out (`code 23`), retry once — sidecar serializes, heavy load = timeouts.
+Prompt rules that matter:
 
-### 3. Generate narration
+- Always end prompt with `— ambient only, no music, no speech, no dialogue`. Muse generates speech if you mention talking.
+- For faceless: `seen from behind`, `back to camera`, `silhouette`, `hands only`, `face out of frame`, `over-the-shoulder`.
+- For natural presence: `sits down`, `leans on desk`, `looks out window` — no `smiling at camera`, no `talking`, no `presenting`.
+- If muse returns a frame with a face you don't want, retry with a tighter angle prompt (`close-up of hands`, `low angle from desk`) or trim `inSec`/`outSec` to the clean segment — don't accept the face.
+- muse serializes; ~60s/shot; timeout `code 23` → retry once.
 
-`POST /api/ai/media/generate` with:
+### 3. Narration
 
-```json
-{
-  "directory": "<abs workspace>",
-  "mediaType": "audio",
-  "providerId": "elevenLabs",
-  "modelId": "eleven_v4",
-  "prompt": "<Vietnamese narration text>",
-  "voice": "uQaF7frJAAaUmrw6flbw",
-  "outputDirectory": "character/<epXX>"
-}
-```
+`POST /api/ai/media/generate` audio, `providerId: "elevenLabs"`, `modelId: "eleven_v4"`, `voice: "uQaF7frJAAaUmrw6flbw"`, prompt = the narration line. `eleven_v4` is required for natural Vietnamese (v2 sounds foreign).
 
-Use `eleven_v4` (or `eleven_v4_turbo`) — `eleven_multilingual_v2` sounds foreign-accented on Vietnamese. The provider auto-sends `language_code: "vi"` for v4 models.
+Measure each file with `ffprobe` for `outSec` and subtitle timing.
 
 ### 4. Assemble
 
@@ -93,34 +88,29 @@ Use `eleven_v4` (or `eleven_v4_turbo`) — `eleven_multilingual_v2` sounds forei
   "sequenceId": "epXX",
   "title": "<title>",
   "subtitleColor": "&H0000D7FF",
-  "clips": [
-    {"path": "character/epXX/vid1.mp4", "inSec": 0, "outSec": 8.4,
-     "attachVoiceover": "character/ep02/audio1.mp3",
-     "transitionAfter": "hard_cut", "transitionDurationSec": 0}
-  ],
-  "subtitles": [
-    {"text": "<narration line>", "startSec": 0.2, "endSec": 8.2}
-  ]
+  "clips": [{"path": "<vid>", "inSec": 0, "outSec": 8.4, "attachVoiceover": "<audio>", "transitionAfter": "hard_cut", "transitionDurationSec": 0}],
+  "subtitles": [{"text": "<narration>", "startSec": <clipStart>+0.2, "endSec": <clipEnd>-0.2}]
 }
 ```
 
-Render body: `{"directory", "sequenceId", "expectedRevision", "outputPath": "character/epXX/final.mp4", "width": 1080, "height": 1920, "fps": 30}`.
+Render: `{"outputPath": "character/epXX/final.mp4", "width": 1080, "height": 1920, "fps": 30}`.
 
-Timing math: clip i starts at `sum(durations[0..i-1])`. Subtitle cues match narration (start+0.2, end−0.2 of that clip's slot). `audioGainDb` on each clip defaults to −16 dB when `attachVoiceover` is set — clip music/ambience ducks under narration automatically. Override per clip with `audioGainDb: -8` if ambience is too quiet, `-24` to nearly mute.
+`audioGainDb` defaults to −16 dB on clips with voiceover (ambience ducks automatically).
 
-Yellow subs: `subtitleColor: "&H0000D7FF"`. White: omit or `"&H00FFFFFF"`.
+### 5. Verify
 
-### 5. Verify before reporting
+Extract 3–4 frames across the video; check:
 
-After render, extract 2–3 frames (`ffmpeg -ss <t> -i final.mp4 -frames:v 1 x.png`) and check:
-- face consistency (matches avatar)
-- no unwanted face in "faceless" shots — if a frame leaks a face, trim the clip (`inSec` later / `outSec` earlier) and re-render
-- sub color and position
-- narration present (duration ≈ expected)
+- no unintended face exposure
+- subtitles render yellow
+- narration is audible over ambience
 
-## Common pitfalls
+### 6. Publish to TikTok
 
-- `POST /api/ai/media/generate` on a still-loading provider → restart sidecar/server if timeouts pile up.
-- Server runs `--watch` — editing `apps/server/src` mid-render kills the render. Finish renders before code edits, or run without `--watch` for stable batches.
-- `sequences/create` returns 409 if `sequenceId` exists — use `patch` with `expectedRevision` to update instead.
-- `curl` to `localhost:3000` from a remote device (Tailscale, phone) gets 403 — needs `TOONFLOW_ALLOWED_ORIGINS` env set on server start (dev only).
+Use browser-skill (`bsk`). Upload the rendered `final.mp4` to `tiktok.com/upload`. Write a casual Vietnamese caption — conversational, first-person, no marketing tone, no "AI" mention. 3–5 hashtags max: mix niche (`#storytime`, `#tamtrang`, `#sukientoi`) + broad (`#xuhuong`). Save as draft unless the user says publish.
+
+## Pitfalls
+
+- `create` returns 409 if sequenceId exists — patch instead with `expectedRevision`.
+- Server `--watch` crashes if you edit `apps/server/src` mid-render. Finish renders first.
+- Remote device (iPhone/Tailscale) needs `TOONFLOW_ALLOWED_ORIGINS` env on server start.
