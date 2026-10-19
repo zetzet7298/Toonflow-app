@@ -31,3 +31,7 @@ Thumbs.db
 *.keychain
 *.keychain-db
 .tmp/
+
+# muse sidecar Python env
+/sidecar/**/.venv/
+__pycache__/

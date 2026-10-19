@@ -5,6 +5,13 @@ All notable changes to this commercial fork of Toonflow will be documented in th
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - Muse.ai integration
+
+### Added
+- **Muse.ai media provider** (`packages/providers/src/media/muse.ts`): image generation, image-to-image edit, video generation, and video/audio reference inputs through a local Python sidecar. Cookie auth via provider `apiKey` field, `~/.muse/cookie.txt`, or `MUSE_COOKIE`.
+- **Muse sidecar** (`sidecar/muse/`): FastAPI wrapper (`museService.py`, port 19301) around vendored `museClient.py` (Noise XX handshake + WebSocket tunnel + chat/media download). Serialized generation lock, `/health`, `/probe`, `/generate`.
+- Verified end-to-end: `/api/ai/media/generate` → image (webp), image edit (i2i), video (mp4) saved to workspace.
+
 ## [Unreleased] - Commercial Fork Baseline
 
 ### Added
