@@ -32,16 +32,35 @@ export default {
   rules,
   models: [
     {
+      id: "eleven_v4",
+      label: "Eleven v4 (94 ngôn ngữ, VN tốt)",
+      type: "audio",
+      voices: [
+        { title: "Anh Tuan - Narrator (clone)", voice: "uQaF7frJAAaUmrw6flbw" },
+        { title: "Minh Son - Ads (VN Bắc)", voice: "ObhtJZSfI8Ps4i8lwyVx" },
+        { title: "Tuan Anh - Story (VN Bắc)", voice: "YeV2u3R2gzLArVTYTis8" },
+        { title: "Rachel (EN default)", voice: "21m00Tcm4TlvDq8ikWAM" },
+      ],
+    },
+    {
+      id: "eleven_v4_turbo",
+      label: "Eleven v4 Turbo (nhanh, VN tốt)",
+      type: "audio",
+      voices: [
+        { title: "Anh Tuan - Narrator (clone)", voice: "uQaF7frJAAaUmrw6flbw" },
+        { title: "Minh Son - Ads (VN Bắc)", voice: "ObhtJZSfI8Ps4i8lwyVx" },
+        { title: "Rachel (EN default)", voice: "21m00Tcm4TlvDq8ikWAM" },
+      ],
+    },
+    {
       id: "eleven_multilingual_v2",
-      label: "Eleven Multilingual v2",
+      label: "Eleven Multilingual v2 (cũ)",
       type: "audio",
       voices: [
         { title: "Rachel (default)", voice: "21m00Tcm4TlvDq8ikWAM" },
         { title: "Adam", voice: "pNInz6obpgDQGcFmaJgB" },
         { title: "Bella", voice: "EXAVITQu4vr4xnSDxMaL" },
         { title: "Domi", voice: "AZnzlk1XvdvUeBnXmlld" },
-        { title: "Elli", voice: "MF3mGyEYCl7XYWbV9V6O" },
-        { title: "Josh", voice: "TxGEqnHWrfWFTfGW9XjX" },
       ],
     },
     {
@@ -71,6 +90,10 @@ export default {
       model_id: request.model,
       output_format: target.outputFormat,
     };
+    // eleven_v4 hỗ trợ language_code; VN voice trên v4 cần hint vi để phát âm chuẩn
+    if (typeof request.model === "string" && request.model.startsWith("eleven_v4")) {
+      body.language_code = "vi";
+    }
     const voiceSettings: Record<string, number> = {};
     if (request.speed !== undefined) {
       if (request.speed < 0.7 || request.speed > 1.2) throw new Error("ElevenLabs 语速须在 0.7 到 1.2 倍之间");
