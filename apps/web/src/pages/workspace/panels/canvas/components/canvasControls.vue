@@ -21,6 +21,17 @@
             <icon-folders :size="18" />
           </el-button>
         </el-tooltip>
+        <el-tooltip :showArrow="false" :content="albumVisible ? '关闭媒体相册' : '打开媒体相册'" placement="top" :hideAfter="0" :enterable="false" :triggerKeys="[]">
+          <el-button
+            class="toolButton"
+            text
+            :type="albumVisible ? 'primary' : 'default'"
+            :aria-pressed="albumVisible"
+            aria-label="媒体相册"
+            @click="albumVisible = !albumVisible">
+            <icon-album :size="18" />
+          </el-button>
+        </el-tooltip>
         <!-- trigger 用 contextmenu 是为了让整理按钮只由 arrangeNodes 控制显隐，同时仍保留点击外部自动关闭 -->
         <el-tooltip :showArrow="false" content="整理画布" placement="top" :hideAfter="0" :enterable="false" :triggerKeys="[]" :disabled="undoPopoverVisible">
           <span class="toolTrigger">
@@ -119,7 +130,7 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { Panel, useVueFlow, type XYPosition } from "@vue-flow/core";
 import { MiniMap } from "@vue-flow/minimap";
-import { IconMap, IconMagnet, IconFocusCentered } from "@tabler/icons-vue";
+import { IconAlbum, IconMap, IconMagnet, IconFocusCentered } from "@tabler/icons-vue";
 import { ElMessage } from "element-plus";
 import { arrangeCanvas } from "../arrangeCanvas";
 
@@ -131,6 +142,7 @@ const props = defineProps<{
 const snapEnabled = defineModel<boolean>("snapEnabled", { required: true });
 const showEdges = defineModel<boolean>("showEdges", { required: true });
 const assetsVisible = defineModel<boolean>("assetsVisible", { default: false });
+const albumVisible = defineModel<boolean>("albumVisible", { default: false });
 const showMap = ref(false);
 const zoomMenuVisible = ref(false);
 const flow = useVueFlow();
