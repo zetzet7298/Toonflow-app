@@ -7,6 +7,7 @@ import apiMart from "./src/media/apiMart";
 import metaso from "./src/media/metaso";
 import compshare from "./src/media/compshare";
 import muse from "./src/media/muse";
+import elevenLabs from "./src/media/elevenLabs";
 
 export type Provider = ProviderDefinition;
 export type ProviderPrice = NonNullable<Awaited<ReturnType<NonNullable<Provider["getPrice"]>>>>;
@@ -18,4 +19,4 @@ export type AudioConvertOptions = Parameters<ProviderTools["audio"]["convert"]>[
 export type { FfmpegFactory, FfmpegCommand } from "@toonflow/ffmpeg/types";
 
 export const languageProviders = [tfRouterLanguage, deepSeek] as const;
-export const mediaProviders = [tfRouterMedia, apiMart, metaso, compshare, muse] as const;
+export const mediaProviders = [tfRouterMedia, apiMart, metaso, compshare, muse, elevenLabs] as const;
