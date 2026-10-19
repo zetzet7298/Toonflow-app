@@ -1,30 +1,30 @@
-# 开发与扩展指南
+# Hướng dẫn phát triển & mở rộng
 
-[返回 Toonflow 首页](../README.md) · [文档目录](./readme.md) · [贡献指南](../CONTRIBUTING.md) · [开发规范](../AGENTS.md)
+[Trang chủ Toonflow](../README.md) · [Mục lục docs](./readme.md) · [Hướng dẫn đóng góp](../CONTRIBUTING.md) · [Quy tắc phát triển](../AGENTS.md)
 
-本文收录插件开发、源码运行、桌面打包和更新发布的详细说明。首次参与开发，可先阅读贡献指南。
+Tài liệu này tổng hợp hướng dẫn phát triển plugin, chạy từ source, đóng gói desktop và phát hành update. Lần đầu tham gia dev, hãy đọc [hướng dẫn đóng góp](../CONTRIBUTING.md) trước.
 
-## 🧩 插件与模型扩展
+## 🧩 Plugin & mở rộng model
 
-通过“设置 → 插件市场”发现和管理节点、工具与技能；市场顶部可以直接打开 [网页版市场](https://api.toonflow.net/console/plugIn) 和 [开发者文档](https://qcn7xdsqgc4z.feishu.cn/docx/KNBNd9naqolsy6xjAOCcEAkqnRd)。市场需要 TF-Router API Key，未配置时会提示填写。
+Qua **Settings → Plugin Market** để khám phá và quản lý node, tool, skill; đầu market có thể mở [web market](https://api.toonflow.net/console/plugIn) và [tài liệu dev](https://qcn7xdsqgc4z.feishu.cn/docx/KNBNd9naqolsy6xjAOCcEAkqnRd). Market cần TF-Router API Key, chưa cấu hình sẽ hiện prompt điền.
 
-| 扩展类型 | 用途 | 开发入口 |
+| Loại mở rộng | Công dụng | Điểm vào dev |
 | --- | --- | --- |
-| 节点 | 为画布增加交互组件、输入输出端口与节点操作。 | [节点脚手架](../packages/nodeScaffold/readme.md) · [内置节点](../packages/nodes/) |
-| 工具 | 为 Agent 增加工作区操作、搜索、媒体生成等能力，可附带交互 UI。 | [工具脚手架](../packages/toolScaffold/readme.md) · [内置工具](../packages/tools/) |
-| 技能 | 用 `SKILL.md` 和附属资料描述创作流程、方法与操作约定。 | [内置技能](../packages/skills/) |
-| 提供方 | 适配不同平台的模型列表、请求参数和媒体返回结果。 | [提供方实现](../packages/providers/src/) |
+| Node | Thêm component tương tác, cổng input/output và thao tác node vào canvas. | [Node scaffold](../packages/nodeScaffold/readme.md) · [Node built-in](../packages/nodes/) |
+| Tool | Thêm workspace operation, search, media generation cho Agent, có thể kèm UI tương tác. | [Tool scaffold](../packages/toolScaffold/readme.md) · [Tool built-in](../packages/tools/) |
+| Skill | Mô tả quy trình sáng tạo, phương pháp và quy ước thao tác bằng `SKILL.md` + tài liệu kèm theo. | [Skill built-in](../packages/skills/) |
+| Provider | Adapter cho model list, request param và media response của các nền tảng khác nhau. | [Provider implementation](../packages/providers/src/) |
 
-节点与工具的配置表单统一使用 `@form-create/element-ui` 的规则；有必填项未填写时，配置按钮会显示红点。工具只接收自身配置，宿主不向工具直接传递完整应用设置。
+Form cấu hình node/tool dùng chung rule `@form-create/element-ui`; có required field chưa điền thì nút config hiện chấm đỏ. Tool chỉ nhận config của chính nó, host không truyền full app settings.
 
-媒体接口包含图片、视频和音频的扩展类型，实际能力由各提供方实现；当前内置 TF-Router 媒体适配提供图片与视频生成。技能既可以全局安装，也可以放在当前工作区的 `skill/` 目录，同名时优先使用工作区版本。
+Media interface gồm image, video, audio; năng lực thực tế do provider implement, hiện TF-Router media adapter built-in có image + video generation. Skill có thể cài global hoặc đặt trong `skill/` của workspace; trùng tên thì dùng bản workspace.
 
-需要从外部 Coding 工具操作 Toonflow 时，在“设置 → MCP”开启服务并复制客户端配置，支持 HTTP 与 stdio 连接。画布和节点等界面操作需要保持 Toonflow 窗口或网页打开，详见 [MCP 接入说明](../packages/mcp/README.md)。
+Khi cần điều khiển Toonflow từ Coding tool bên ngoài, bật service trong **Settings → MCP** và copy client config, hỗ trợ HTTP + stdio. Thao tác canvas/node cần giữ cửa sổ hoặc tab Toonflow mở; xem [hướng dẫn MCP](../packages/mcp/README.md).
 
 <details>
-<summary><strong>通过网页唤起桌面安装插件</strong></summary>
+<summary><strong>Cài plugin qua web (desktop deep link)</strong></summary>
 
-安装桌面客户端后，网页可通过 `toonflow://install` 请求安装插件。应用会先展示类型、文件名和下载地址，用户确认后再下载与安装。
+Sau khi cài desktop client, web có thể gọi `toonflow://install` để cài plugin. App hiện loại, tên file và URL download, user xác nhận mới tải + cài.
 
 ```ts
 const link = new URL("toonflow://install");
@@ -33,127 +33,127 @@ link.searchParams.set("url", "https://example.com/plugins/exampleNode.umd.js");
 window.location.href = link.href;
 ```
 
-| `type` | 文件格式 | 安装位置 |
+| `type` | Định dạng file | Vị trí cài |
 | --- | --- | --- |
 | `node` | `.umd.js` | `data/nodes/` |
 | `tool` | `.tool.js` | `data/tools/` |
-| `skill` | `SKILL.md`、`.zip`、`.tar`、`.tar.gz`、`.tgz` | `data/skills/<name>/` |
-| `provider` | 媒体提供方 `.ts` | `data/providers/` |
+| `skill` | `SKILL.md`, `.zip`, `.tar`, `.tar.gz`, `.tgz` | `data/skills/<name>/` |
+| `provider` | Media provider `.ts` | `data/providers/` |
 
-下载地址须为 HTTP/HTTPS，文件名来自 URL 路径。同名节点、工具和技能在版本更高时允许更新；覆盖同版本或降级需在开发者选项中使用强制安装，提供方不覆盖同名项。
+URL phải HTTP/HTTPS, tên file lấy từ URL path. Node/tool/skill trùng tên cho phép update khi version cao hơn; ghi đè cùng version hoặc downgrade cần bật force install trong dev option. Provider không ghi đè trùng tên.
 
-普通插件与技能包最多 20 MB，技能解压后也受此限制；提供方最多 2 MB。技能包支持 ZIP 和 TAR，须包含带有 `name`、`description` frontmatter 的 `SKILL.md`，附属资源放在其所在目录内。TAR 包使用普通 USTAR 格式，不包含链接及 PAX/GNU 扩展条目。
+Plugin + skill package tối đa 20 MB, giải nén skill cũng chịu giới hạn; provider tối đa 2 MB. Skill package hỗ trợ ZIP và TAR, phải có `SKILL.md` với `name`, `description` frontmatter; tài nguyên phụ đặt cùng thư mục. TAR dùng USTAR thường, không link và không PAX/GNU extension.
 
-Windows 安装器负责注册协议；macOS 需要将应用放入 `/Applications` 或 `~/Applications`。普通浏览器开发模式不注册桌面协议。
+Windows installer đăng ký protocol; macOS cần đặt app trong `/Applications` hoặc `~/Applications`. Dev mode trong browser thường không đăng ký desktop protocol.
 
 </details>
 
 ---
 
-## 🛠️ 开发与构建
+## 🛠️ Dev & build
 
-前端、业务服务和桌面端在同一个 Bun Workspaces 仓库中维护。
+Frontend, business server và desktop cùng quản lý trong Bun Workspaces repo.
 
-| 层级 | 技术 |
+| Layer | Công nghệ |
 | --- | --- |
-| 运行时与包管理 | Bun 1.3.14、Bun Workspaces |
-| 前端 | Vue 3、Vite、TypeScript、Pinia、Element Plus、Vue Flow |
-| 服务端 | Bun、Express 5、Zod |
-| Agent | Pi Agent SDK、工具插件、Markdown 技能与记忆 |
-| 桌面 | Electrobun；Windows 使用 WebView2 和 NSIS 安装器 |
-| 3D 与媒体 | Three.js、FFmpeg、可扩展的媒体提供方 |
+| Runtime & package | Bun 1.3.14, Bun Workspaces |
+| Frontend | Vue 3, Vite, TypeScript, Pinia, Element Plus, Vue Flow |
+| Server | Bun, Express 5, Zod |
+| Agent | Pi Agent SDK, tool plugin, Markdown skill + memory |
+| Desktop | Electrobun; Windows dùng WebView2 + NSIS installer |
+| 3D & media | Three.js, FFmpeg, media provider extensible |
 
-### 本地开发
+### Dev local
 
-先安装 Git 和项目指定版本的 [Bun](https://bun.sh/)，然后执行：
+Cài Git và Bun đúng version:
 
 ```sh
-git clone https://github.com/HBAI-Ltd/Toonflow-app.git
+git clone https://github.com/zetzet7298/Toonflow-app.git
 cd Toonflow-app
 bun install
 
-# 首次开发或修改插件后，构建节点和工具并同步到 data/
+# Lần đầu hoặc sau khi sửa plugin, build node/tool sync vào data/
 bun run dev:plugins
 
-# 同时启动 Web 与业务 Server
+# Khởi động Web + Server đồng thời
 bun run dev
 ```
 
-打开 `http://localhost:5173`。独立 Server 默认监听 `3000`，Web 开发服务会代理 API 请求。`dev` 不会自动构建或同步插件，因此首次启动需要上面的 `dev:plugins` 步骤。
+Mở `http://localhost:5173`. Standalone server mặc định lắng nghe `3000`, Vite dev server proxy API. `dev` không tự build/sync plugin nên lần đầu cần `dev:plugins`.
 
-### 常用命令
+### Lệnh thường dùng
 
-以下命令在仓库根目录执行：
+Chạy ở repo root:
 
-| 命令 | 用途 |
+| Lệnh | Công dụng |
 | --- | --- |
-| `bun run dev:web` | 单独启动 Web 开发服务。 |
-| `bun run dev:server` | 单独启动业务 Server。 |
-| `bun run dev:plugins` | 构建节点和工具，并同步到开发数据目录。 |
-| `bun run dev:desktop` | 同步开发插件、构建 Web，并启动桌面应用。 |
-| `bun run build` | 构建工具、Web、Server、MCP，并输出技能和提供方文件。 |
-| `bun run build:server` | 构建独立部署所需的节点、工具、Web、Server、MCP、技能和提供方，支持 Linux。 |
-| `bun run build:nodes` | 构建节点到 `build/nodes/`，不写入 `data/nodes/`。 |
-| `bun run build:tools` | 构建工具到 `build/tools/`，不写入 `data/tools/`。 |
-| `bun run start:server` | 运行 `build/server/` 中已构建的服务。 |
-| `bun run build:desktop` | 构建当前平台的桌面应用及随包资源。 |
-| `bun run package:desktop` | 生成当前平台的 Windows NSIS 安装包或 macOS DMG。 |
-| `bun run release:desktop <版本号> --auto` | 生成当前平台安装包、完整更新包，并在存在上一版时生成 patch。 |
-| `bun run typecheck` | 单独执行各工作区的类型检查。 |
-| `bun run --cwd packages/i18n extract` | 手动抽取中文源文案和来源索引，不生成其他语言的译文。 |
+| `bun run dev:web` | Chỉ chạy Web dev server. |
+| `bun run dev:server` | Chỉ chạy business Server. |
+| `bun run dev:plugins` | Build node + tool, sync vào dev data dir. |
+| `bun run dev:desktop` | Sync dev plugin, build Web, khởi động desktop app. |
+| `bun run build` | Build tool, Web, Server, MCP, output skill + provider. |
+| `bun run build:server` | Build node, tool, Web, Server, MCP, skill, provider cho deploy độc lập (Linux được). |
+| `bun run build:nodes` | Build node vào `build/nodes/`, không ghi `data/nodes/`. |
+| `bun run build:tools` | Build tool vào `build/tools/`, không ghi `data/tools/`. |
+| `bun run start:server` | Chạy server đã build trong `build/server/`. |
+| `bun run build:desktop` | Build desktop app + bundled resource cho platform hiện tại. |
+| `bun run package:desktop` | Tạo Windows NSIS installer hoặc macOS DMG. |
+| `bun run release:desktop <version> --auto` | Tạo installer, full update package, và patch nếu có version trước. |
+| `bun run typecheck` | Type-check các workspace. |
+| `bun run --cwd packages/i18n extract` | Extract Chinese source text + source index, không tạo bản dịch ngôn ngữ khác. |
 
-构建与类型检查分别执行。新增、移动或删除业务接口后，在 `apps/server` 执行 `bun run routes` 生成路由。
+Build và typecheck chạy riêng. Sau khi thêm/move/xóa business interface, chạy `bun run routes` trong `apps/server` để generate route.
 
-### 多语言维护
+### Đa ngôn ngữ
 
-语言字典与翻译运行时集中在 [`packages/i18n`](../packages/i18n/readme.md)。Web 的明确展示位置由 Vite 插件在编译时转换，业务源码可继续使用中文；动态文案使用 `t` / `msg` 标签模板。服务端使用请求语言上下文，避免并发请求之间串语言。
+Language dictionary + translation runtime ở [`packages/i18n`](../packages/i18n/readme.md). Web explicit display position được Vite plugin transform lúc compile; business source vẫn dùng Chinese, dynamic text dùng `t`/`msg` template tag. Server dùng request language context tránh xuyên ngôn ngữ giữa concurrent request.
 
-修改中文文案后，手动执行上面的 `extract` 命令，再补齐 `packages/i18n/src/locales/` 中各语言的同名键，保留占位符。开发启动和构建不会自动抽取，也不会自动生成译文。翻译仅用于显示，不改变用户数据、模型正文或业务判断值；供应商、tools、nodes、节点脚手架子包及安装器不在翻译范围内。具体用法、语言回退规则和验证记录见[多语言维护说明](../packages/i18n/readme.md)。
+Sửa Chinese text xong chạy `extract` thủ công, rồi bổ sung key tương ứng trong `packages/i18n/src/locales/`, giữ placeholder. Dev startup và build không tự extract hoặc tự gen bản dịch. Dịch chỉ dùng hiển thị, không đổi user data, model body hoặc business judgement; provider, tool, node, node scaffold subpackage và installer không nằm trong phạm vi dịch. Chi tiết rule fallback và verification xem [i18n readme](../packages/i18n/readme.md).
 
 <details>
-<summary><strong>在本机运行构建后的 Web 与 Server</strong></summary>
+<summary><strong>Chạy Web + Server đã build trên máy local</strong></summary>
 
-首次从源码运行，完成依赖安装后执行：
+Lần đầu chạy từ source, sau `bun install`:
 
 ```sh
 bun run build:server
 bun run start:server
 ```
 
-然后打开 `http://localhost:3000`。这套命令使用仓库根目录的默认 `data/`；服务首次启动会从构建产物初始化内置节点、工具、技能和提供方，保留已有插件文件。迁移到其他目录或机器时，需一并处理运行依赖、配置和工作区，不能只复制 `build/` 就视作完整安装。
+Mở `http://localhost:3000`. Dùng `data/` mặc định ở repo root; lần khởi động đầu server khởi tạo built-in node, tool, skill, provider từ build artifact, giữ file plugin có sẵn. Khi migrate sang thư mục/máy khác cần mang cả runtime dependency, config và workspace, không chỉ copy `build/`.
 
-独立 Server 采用单进程运行。桌面端复用同一个 `createApp`，在主进程监听系统分配的本机端口。目录选择、原生保存与桌面更新等接口仅由桌面宿主提供。
+Standalone server chạy single process. Desktop dùng chung `createApp`, lắng nghe local port do OS cấp. Directory selection, native save và desktop update interface chỉ có ở desktop host.
 
 </details>
 
 <details>
-<summary><strong>桌面构建准备：Windows 与 macOS</strong></summary>
+<summary><strong>Chuẩn bị build desktop: Windows và macOS</strong></summary>
 
-桌面脚本支持 Windows x64、macOS arm64 和 macOS x64，需要在对应系统与架构上构建。
+Desktop script hỗ trợ Windows x64, macOS arm64 và macOS x64, phải build trên đúng OS + arch.
 
 **Windows x64**
 
-使用 Electrobun 2.0.1。打包需要 NSIS，默认查找 `C:/Program Files (x86)/NSIS/makensis.exe`，可通过 `NSIS_PATH` 指定路径。首次打包会下载并验证微软 WebView2 引导程序。
+Dùng Electrobun 2.0.1. Package cần NSIS, mặc định tìm `C:/Program Files (x86)/NSIS/makensis.exe`, có thể chỉ định qua `NSIS_PATH`. Lần package đầu sẽ download + verify Microsoft WebView2 bootstrapper.
 
 ```sh
 bun run build:desktop
 bun run package:desktop
 ```
 
-安装包输出到 `build/desktop/artifacts/toonflow-<版本>-Setup.exe`。
+Installer output `build/desktop/artifacts/toonflow-<version>-Setup.exe`.
 
 **macOS**
 
-先安装 Xcode Command Line Tools。Apple Silicon 使用 Electrobun 2.0.1；Intel Mac 使用 `compat/macIntel/` 中的 Electrobun 1.18.1 兼容构建，需先准备其依赖：
+Cài Xcode Command Line Tools. Apple Silicon dùng Electrobun 2.0.1; Intel Mac dùng Electrobun 1.18.1 compatible build trong `compat/macIntel/`, cần chuẩn bị dependency trước:
 
 ```sh
-# 仅 Intel Mac 需要
+# Chỉ Intel Mac cần
 cd compat/macIntel
 bun install --frozen-lockfile
 cd ../..
 ```
 
-在对应架构的 Mac 上生成原生启动库，然后构建：
+Trên Mac đúng arch, tạo native startup library rồi build:
 
 ```sh
 bun packages/startup/scripts/buildMac.ts
@@ -161,153 +161,168 @@ bun run build:desktop
 bun run package:desktop
 ```
 
-启动库脚本会下载固定版本的 ThorVG 源码并校验摘要。产物分别位于 `build/desktop/artifacts/macArm64/` 和 `build/desktop/artifacts/macX64/`。
+Script startup library download ThorVG cố định version + verify checksum. Artifact nằm `build/desktop/artifacts/macArm64/` và `build/desktop/artifacts/macX64/`.
 
-本机默认生成未做 Developer ID 签名与公证的测试包；GitHub Actions 的 ARM 包会按下方配置自动签名并公证，Intel 仍不重签。对于自己构建且确认来源的测试应用，若被隔离属性拦截，可仅移除该应用的隔离属性，路径按实际位置调整：
+Local mặc định tạo package không ký Developer ID + không notarize; GitHub Actions ARM build tự ký + notarize theo config dưới đây, Intel vẫn không re-sign. Với test app tự build và chắc nguồn gốc, nếu bị quarantine chặn có thể gỡ quarantine riêng app đó:
 
 ```sh
 xattr -dr com.apple.quarantine "/Applications/toonflow.app"
 ```
 
-**类型检查与 SDK**
+**Typecheck và SDK**
 
-若 Windows x64 或 Apple Silicon 在首次构建前单独进行类型检查，先准备 Electrobun SDK：
+Nếu Windows x64 hoặc Apple Silicon cần typecheck riêng trước lần build đầu, chuẩn bị Electrobun SDK trước:
 
 ```sh
 bun apps/desktop/node_modules/electrobun/bin/electrobun.cjs prepare
 bun run typecheck
 ```
 
-Intel Mac 在安装兼容 SDK 后，先运行桌面开发或构建命令生成适配文件。类型检查不会隐式安装依赖或编译原生库。
+Intel Mac sau khi cài compatible SDK, chạy một lần dev/build desktop để tạo file thích ứng. Typecheck không tự cài dependency hoặc compile native library.
 
 </details>
 
 <details>
-<summary><strong>发布、更新与插件同步</strong></summary>
+<summary><strong>Release, update và plugin sync</strong></summary>
 
-**通过版本标签自动发布**
+**Auto release bằng version tag**
 
-发布直接使用现有提交上的 `vX.Y.Z` 标签，无需 Git Flow 或 release 分支。
+Release dùng tag `vX.Y.Z` trên commit sẵn có, không cần Git Flow hoặc release branch.
 
-1. 提交要发布的代码，在 SourceTree 中选中该提交，点击 **标签**。
-2. 填写完整标签名，例如 `v2.0.0`，确认标签指向要发布的提交。
-3. 在左侧标签列表右键这个新标签，选择 **推送标签**，目标选择正式仓库 `origin`。只推送本次标签，不勾选“推送所有标签”。
+1. Commit code cần release, trong SourceTree chọn commit đó, bấm **Tag**.
+2. Điền tag đầy đủ, ví dụ `v2.0.0`, xác nhận tag trỏ đúng commit.
+3. Trong danh sách tag bên trái, chuột phải tag mới → **Push Tag**, đích là `origin`. Chỉ push tag này, không tick "Push all tags".
 
-推送标签会一并上传它所引用的提交，无需创建或推送发布分支。GitHub Actions 会自动运行 **Release desktop v2.0.0**，构建 Windows x64、macOS ARM64 和 macOS x64，全部成功后创建对应 GitHub Release。
+Push tag sẽ kèm commit mà tag trỏ tới, không cần tạo/push release branch. GitHub Actions tự chạy **Release desktop v2.0.0**, build Windows x64, macOS ARM64 và macOS x64, tất cả thành công thì tạo GitHub Release.
 
-也可在仓库终端执行下面两条命令（将 `2.0.0` 换成本次版本）：
+Cũng có thể chạy 2 lệnh (đổi `2.0.0` thành version hiện tại):
 
 ```sh
 git tag -a v2.0.0 -m "Release v2.0.0"
 git push --no-follow-tags origin refs/tags/v2.0.0:refs/tags/v2.0.0
 ```
 
-版本格式为小写 `v` 加 `X.Y.Z`；轻量标签和附注标签均支持。使用新的版本号，不覆盖已有标签。构建失败时，在 Actions 中查看日志；代码不变可重跑任务，修改代码后使用新版本号。
+Version format chữ `v` thường + `X.Y.Z`; lightweight tag và annotated tag đều được. Dùng version mới, không ghi đè tag cũ. Build fail thì xem Actions log; code không đổi có thể re-run, sửa code thì dùng version mới.
 
-**一次构建三个平台**
+**Build 3 platform một lần**
 
-在 GitHub 仓库打开 **Actions → Release desktop → Run workflow**，选择要发布的可信分支，填写版本号（例如 `2.0.1`），将 `ref` 留空后运行。推送 `vX.Y.Z` 标签同样会触发发布。包含 ARM 的构建要求 `ref` 与触发工作流的分支或标签指向同一提交，不允许借此切换到其他提交；仅构建 Windows 或 Intel 时仍可指定其他 `ref`。
+Trong GitHub repo mở **Actions → Release desktop → Run workflow**, chọn branch tin cậy, điền version (ví dụ `2.0.1`), `ref` để trống. Push `vX.Y.Z` tag cũng trigger release. Build có ARM yêu cầu `ref` trùng commit với branch/tag trigger, không được switch sang commit khác; chỉ build Windows hoặc Intel vẫn có thể chỉ định `ref` khác.
 
-工作流分别在 Windows、Intel Mac 和 Apple Silicon 运行器上构建，全部成功后统一上传到对应 GitHub Release：
+Workflow build trên runner Windows, Intel Mac và Apple Silicon, tất cả thành công thì upload lên GitHub Release:
 
-| 平台 | 安装包 | 更新文件 |
+| Platform | Installer | Update file |
 | --- | --- | --- |
-| Windows x64 | `toonflow-<版本号>-Setup.exe` | `stable-win-x64-*` |
+| Windows x64 | `toonflow-<version>-Setup.exe` | `stable-win-x64-*` |
 | macOS Intel | DMG | `stable-macos-x64-*` |
 | macOS Apple Silicon | DMG | `stable-macos-arm64-*` |
 
-各平台包含完整更新包 `.tar.zst`、更新清单 `*-update.json`，以及**GitHub 最新发布版 → 当前版本**的 `<平台前缀>-<旧 hash>.patch`。首次发布找不到该平台清单（HTTP 404）时只生成安装包和完整更新包；其他网络错误、无效清单或缺失 patch 会中止构建。版本号必须高于更新源中的上一版。
+Mỗi platform gồm full update `.tar.zst`, update manifest `*-update.json`, và patch `<platform>-<old hash>.patch` từ GitHub latest release → version hiện tại. Lần release đầu platform đó không có manifest (HTTP 404) thì chỉ tạo installer + full update; network error khác, manifest không hợp lệ hoặc thiếu patch thì hủy build. Version phải cao hơn version trước trong update source.
 
-构建固定使用 GitHub Releases 的 `releases/latest/download` 读取上一版清单及完整包，用于生成补丁。GitHub Actions 使用当前工作流仓库（`GITHUB_SERVER_URL` / `GITHUB_REPOSITORY`），本机构建默认使用 `HBAI-Ltd/Toonflow-app`。此地址写入 SDK 的构建配置，不受客户端设置影响；客户端运行时在“设置 → 关于”选择更新源，默认使用官方源 `https://api.toonflow.net/version/desktopUpdates`，也可切换到 GitHub Releases。开发者选项可保存一个自定义更新文件目录地址，保存后会出现在“关于”的更新源下拉框。工作流会上传文件到 GitHub Release，官方更新服务的文件仍需按下方命令单独同步。
+Build cố định dùng `releases/latest/download` của GitHub Releases để lấy manifest và full package của version trước. GitHub Actions dùng repo hiện tại (`GITHUB_SERVER_URL` / `GITHUB_REPOSITORY`), local build mặc định `zetzet7298/Toonflow-app`. Địa chỉ này ghi vào SDK build config, client không đổi được; client lúc chạy chọn update source trong **Settings → About**, mặc định dùng official source `https://api.toonflow.net/version/desktopUpdates`, có thể chuyển sang GitHub Releases. Dev option có thể lưu custom update file directory address, lưu xong xuất hiện trong dropdown update source ở **About**. Workflow upload file lên GitHub Release, official update service vẫn phải sync riêng theo lệnh dưới.
 
-[Debug 工作流](../.github/workflows/debug.yml) 可单独选择平台或全部平台，产物保留 7 天，不创建 Release。默认只打完整包，勾选 `generatePatch` 可验证增量构建。CI 构建和归档检查不等于已验证真实安装、GUI 启动或 macOS Gatekeeper。
+[Debug workflow](../.github/workflows/debug.yml) có thể chọn platform riêng hoặc tất cả, artifact giữ 7 ngày, không tạo Release. Mặc định chỉ đóng gói full, tick `generatePatch` để verify incremental build. CI build + archive check không thay thế verify cài đặt thật, GUI launch hoặc macOS Gatekeeper.
 
-**ARM 自动签名与公证：首次配置**
+**ARM auto-sign & notarize: cấu hình lần đầu**
 
-在 GitHub 仓库的 **Settings → Secrets and variables → Actions → New repository secret** 添加：
+Trong GitHub repo **Settings → Secrets and variables → Actions → New repository secret** thêm:
 
-| Secret | 内容 |
+| Secret | Nội dung |
 | --- | --- |
-| `MACOS_CERTIFICATE_BASE64` | 包含一个有效 **Developer ID Application** 证书及其私钥的 `.p12` 文件，编码为 Base64。 |
-| `MACOS_CERTIFICATE_PASSWORD` | 导出该 `.p12` 时设置的非空密码。 |
-| `MACOS_NOTARIZATION_KEY_ID` | App Store Connect 团队 API 密钥的 Key ID。 |
-| `MACOS_NOTARIZATION_ISSUER_ID` | 该团队 API 密钥的完整 Issuer ID，不是 Team ID。 |
-| `MACOS_NOTARIZATION_KEY_BASE64` | 对应 API 密钥的 `.p8` 私钥文件，编码为 Base64。 |
+| `MACOS_CERTIFICATE_BASE64` | File `.p12` chứa certificate **Developer ID Application** hợp lệ + private key, encode Base64. |
+| `MACOS_CERTIFICATE_PASSWORD` | Password không rỗng khi export `.p12`. |
+| `MACOS_NOTARIZATION_KEY_ID` | Key ID của App Store Connect team API key. |
+| `MACOS_NOTARIZATION_ISSUER_ID` | Issuer ID đầy đủ của team API key, không phải Team ID. |
+| `MACOS_NOTARIZATION_KEY_BASE64` | File `.p8` private key tương ứng, encode Base64. |
 
-在 Windows PowerShell 中执行以下命令，把路径替换为本机证书路径。命令只复制到剪贴板，不打印证书内容，也不生成文件；随后粘贴到 `MACOS_CERTIFICATE_BASE64` 的 Secret 输入框：
-
-```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\证书目录\signing.p12')) | Set-Clipboard
-```
-
-然后单独执行下面的命令，把 `.p8` 路径替换为本机文件路径，将剪贴板内容保存到 `MACOS_NOTARIZATION_KEY_BASE64`：
+Trong Windows PowerShell chạy lệnh sau, đổi path thành đường dẫn cert thật. Lệnh chỉ copy vào clipboard, không in nội dung cert, không tạo file; sau đó paste vào ô Secret `MACOS_CERTIFICATE_BASE64`:
 
 ```powershell
-[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\证书目录\AuthKey_你的KeyID.p8')) | Set-Clipboard
+[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\cert-dir\signing.p12')) | Set-Clipboard
 ```
 
-粘贴保存后可执行 `Set-Clipboard -Value ''` 清空剪贴板。密码直接填写到 `MACOS_CERTIFICATE_PASSWORD`，不写进命令、源码或聊天记录。Base64 只是编码，不是加密；P12、P8、Base64、密码均不得提交到公开仓库或上传为构建产物。
+Sau đó chạy riêng lệnh dưới, đổi path `.p8` thành file thật, lưu clipboard vào `MACOS_NOTARIZATION_KEY_BASE64`:
 
-公证使用 App Store Connect **团队 API 密钥**，Key ID、Issuer ID 与 P8 必须对应同一把有权限的密钥。更换签名 P12 不要求同时更换仍有效且有权限的公证 API 密钥。这种认证方式不需要 Apple ID 密码或 Team ID；P12 及其密码用于代码签名。
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes('C:\cert-dir\AuthKey_YourKeyID.p8')) | Set-Clipboard
+```
 
-配置后，Debug 与 Release 的 ARM 构建都会自动导入临时钥匙串，使用 Electrobun 签署应用内的原生代码、完整更新包中的应用、安装包装程序和 DMG，并分别提交 Apple 公证、等待通过、附加并验证公证票据。完整更新归档在应用公证后生成；上传前还会严格验证解压后的应用、DMG 及镜像内应用的签名和公证票据，并核对是否使用本次导入的 Developer ID 证书。
+Paste lưu xong có thể `Set-Clipboard -Value ''` để xóa clipboard. Password điền trực tiếp vào `MACOS_CERTIFICATE_PASSWORD`, không ghi vào lệnh, source hoặc chat log. Base64 chỉ là encode, không phải mã hóa; P12, P8, Base64, password đều không commit repo công khai hoặc upload làm build artifact.
 
-缺少 Secret、没有唯一有效的 Developer ID Application 身份、Apple 拒绝公证或验收失败都会中止构建，不回退为未签名或未公证包。临时 P12 在导入步骤结束后删除；P8 与钥匙串在构建成功、失败或取消后的清理步骤中删除，均放在运行器临时目录。证书 Base64、密码和 P8 Base64 只注入凭据准备步骤，公证 API 标识只额外传给 ARM 构建步骤。公证等待计入工作流现有的 90 分钟超时，超时不会发布。
+Notarize dùng **team API key** của App Store Connect, Key ID, Issuer ID và P8 phải cùng một key có quyền. Đổi P12 không bắt buộc đổi API key notarize còn hiệu lực. Cách này không cần Apple ID password hoặc Team ID; P12 + password dùng ký code.
 
-公开仓库只从可信的手动操作或 `v*` 标签触发签名，不接入 `pull_request` / `pull_request_target`。请用 GitHub Rulesets 保护发布分支及 `v*` 标签，并限制仓库写权限；签名构建会执行所选提交的代码，有权修改发布代码或工作流的人也处于 Secrets 的信任边界内。证书导入方式参见 [GitHub 官方说明](https://docs.github.com/en/actions/how-tos/deploy/deploy-to-third-party-platforms/sign-xcode-applications)。
+Sau khi cấu hình, Debug và Release ARM build đều tự import keychain tạm, dùng Electrobun ký native code trong app, app trong full update package, installer wrapper và DMG, rồi submit Apple notarize, chờ pass, attach và verify notarization ticket. Full update archive tạo sau khi app notarize; trước khi upload còn verify nghiêm ngặt app sau giải nén, DMG và app trong image, và kiểm tra dùng đúng Developer ID cert lần import này.
 
-ARM 的 CI 构建强制同时签名与公证，本机构建默认不启用；Intel 的旧 SDK 重签限制保持不变。公证无需上架 App Store，首次打开仍可能出现确认打开互联网下载应用的提示。CI 验收不代替实际 Mac 上从浏览器下载、安装、启动及升级的验证，参见 [Apple 安全打开应用说明](https://support.apple.com/en-us/102445)。
+Thiếu Secret, không có một Developer ID Application identity hợp lệ duy nhất, Apple reject notarize hoặc acceptance fail đều hủy build, không fallback package không ký/không notarize. P12 tạm xóa sau bước import; P8 và keychain xóa trong cleanup sau khi build thành công, fail hoặc cancel, đều đặt trong runner temp dir. Cert Base64, password và P8 Base64 chỉ inject vào credential prepare step, notarize API identifier chỉ truyền thêm vào ARM build step. Thời gian chờ notarize tính trong timeout 90 phút hiện có, quá timeout không release.
 
-若凭据准备步骤提示“未找到唯一有效的 Developer ID Application 身份”，查看该步骤后续输出的证书类别、有效期和系统诊断。`Apple Development`、`Apple Distribution`、`Developer ID Installer` 均不能替代当前所需的 `Developer ID Application`。若类别正确，仍需检查是否含匹配私钥、是否过期，以及证书信任链；成功导入 P12 不等于存在有效的代码签名身份。诊断不会打印私钥、密码或证书姓名。
+Repo công khai chỉ ký từ manual action hoặc tag `v*` tin cậy, không nhận `pull_request`/`pull_request_target`. Dùng GitHub Rulesets bảo vệ release branch và tag `v*`, giới hạn repo write permission; signed build chạy code của commit đã chọn, ai có quyền sửa release code hoặc workflow cũng nằm trong trust boundary của Secrets. Cách import cert xem [GitHub docs](https://docs.github.com/en/actions/how-tos/deploy/deploy-to-third-party-platforms/sign-xcode-applications).
 
-**本机打包与独立更新服务**
+ARM CI build bắt buộc ký + notarize, local build mặc định không bật; Intel old SDK re-sign giới hạn giữ nguyên. Notarize không cần lên App Store, lần mở đầu vẫn có thể hiện prompt mở app từ internet. CI acceptance không thay verify tải từ browser, cài đặt, khởi động và nâng cấp trên Mac thật, xem [Apple safe open app](https://support.apple.com/en-us/102445).
 
-独立更新服务与业务 Server 分开运行，默认地址为 `http://127.0.0.1:8091`。其配置、部署与发布规则见 [更新服务说明](../apps/updateServer/readme.md)。
+Nếu credential prepare step báo "không tìm thấy Developer ID Application identity hợp lệ duy nhất", xem output bước đó về loại cert, thời hạn và system diagnostic. `Apple Development`, `Apple Distribution`, `Developer ID Installer` không thay thế `Developer ID Application`. Nếu loại đúng, kiểm tra private key khớp, còn hạn, và cert chain; import P12 thành công không đồng nghĩa có signing identity hợp lệ. Diagnostic không in private key, password hoặc cert subject.
+
+**Package local và update server độc lập**
+
+Update server độc lập với business server, mặc định `http://127.0.0.1:8091`. Config, deploy và release rule xem [update server readme](../apps/updateServer/readme.md).
 
 ```sh
 bun run start:updateServer
 
-# 本机仅构建当前系统与架构；自动判断是否已有上一版
+# Local chỉ build OS + arch hiện tại; tự nhận biết đã có version trước chưa
 bun run release:desktop 2.0.0 --auto
 bun run publish:update build/desktop/releases/2.0.0
 
-# 服务器保留上一版时，构建并发布下一版本
+# Khi server đã giữ version trước, build + publish version mới
 bun run release:desktop 2.0.1
 bun run publish:update build/desktop/releases/2.0.1
 ```
 
-Mac 发布目录增加 `macX64/` 或 `macArm64/`，例如 `build/desktop/releases/macArm64/2.0.1`。所有 release 模式都会生成安装包；`--auto` 自动判断基线，不带选项要求已有上一版，`--initial` 跳过基线检查且不生成 patch。同一平台、架构和版本不能重复生成快照。普通 `build:desktop`、`package:desktop` 不访问更新服务器。
+Mac release dir thêm `macX64/` hoặc `macArm64/`, ví dụ `build/desktop/releases/macArm64/2.0.1`. Mọi release mode đều tạo installer; `--auto` tự nhận baseline, không option yêu cầu đã có version trước, `--initial` bỏ qua baseline check và không tạo patch. Cùng platform + arch + version không tạo snapshot trùng. `build:desktop`, `package:desktop` thường không truy cập update server.
 
-桌面用户可在“设置 → 关于”检查更新、下载并重启应用。Windows 更新交换程序目录，保留 `data/` 和 `WebView2/`；卸载时也默认保留这些数据，选择“同时删除用户数据”才会一并清理。
+Desktop user trong **Settings → About** check update, download và restart app. Windows update swap app directory, giữ `data/` và `WebView2/`; uninstall mặc định cũng giữ data, chỉ khi chọn "delete user data too" mới xóa hết.
 
-内置节点与工具按构建 hash 同步：升级或降级后首次启动会替换同名内置插件；Windows 同版本重装也会触发同步。普通重启不重复覆盖。技能和提供方按首次初始化规则处理，保留已有文件；第三方插件和用户素材不随内置节点、工具的同步被覆盖。
+Built-in node và tool sync theo build hash: sau upgrade/downgrade lần khởi động đầu sẽ thay plugin built-in trùng tên; Windows reinstall cùng version cũng trigger sync. Restart thường không ghi đè lại. Skill và provider theo rule first-init, giữ file hiện có; third-party plugin và user asset không bị ghi đè bởi sync built-in node/tool.
 
 </details>
 
-### 项目结构
+### Cấu trúc project
 
 ```text
 apps/
-  web/                 Vue 页面、设置、工作区与画布
-  server/              业务接口与 Agent 运行时，桌面共享此服务
-  desktop/             Electrobun 入口、构建脚本与安装器
-  updateServer/        独立更新文件服务器与发布脚本
+  web/                 Vue page, settings, workspace và canvas
+  server/              Business API và Agent runtime, desktop dùng chung service này
+  desktop/             Electrobun entry, build script và installer
+  updateServer/        Update file server độc lập + publish script
 packages/
-  assets/              共享图片与图标
-  i18n/                多语言字典、运行时与文案抽取
-  nodes/               内置画布节点
-  nodeScaffold/        节点开发脚手架与运行时
-  tools/               Agent 工具插件
-  toolScaffold/        工具开发脚手架与运行时
-  providers/           文本与媒体模型提供方
-  skills/              Markdown 技能及附属资料
-  mcp/                 MCP 服务与协议适配
-  ffmpeg/              FFmpeg 能力
-  startup/             原生启动窗口与动画
-docs/                  项目介绍译版、开发文档与图片
-compat/macIntel/       Intel Mac 兼容构建
-build/                 构建产物
-data/                  本机运行数据，不提交到仓库
+  assets/              Shared image + icon
+  i18n/                Language dictionary, runtime và text extraction
+  nodes/               Built-in canvas node
+  nodeScaffold/        Node dev scaffold + runtime
+  tools/               Agent tool plugin
+  toolScaffold/        Tool dev scaffold + runtime
+  providers/           Text + media model provider
+  skills/              Markdown skill + tài liệu kèm theo
+  mcp/                 MCP service + protocol adapter
+  ffmpeg/              FFmpeg capability
+  startup/             Native startup window + animation
+docs/                  Project doc, dev doc và image
+compat/macIntel/       Intel Mac compatible build
+build/                 Build output
+data/                  Local runtime data, không commit
 ```
 
 ---
+
+## 🧹 Commercial fork checklist
+
+Khi phát triển trên fork `zetzet7298/Toonflow-app` cho mục đích thương mại:
+
+1. Đọc `AGENTS.md` section A (Clean-Room Porting) trước khi port tính năng ArcReel.
+2. Thay toàn bộ clone/install URL từ `HBAI-Ltd/Toonflow-app` sang `zetzet7298/Toonflow-app`.
+3. Trước release thương mại: chạy checklist `AGENTS.md` section J (telemetry, branding, auth, dependency audit, provider sandbox, LICENSE).
+4. Không commit upstream sponsor asset, QR code, business contact, hoặc TF-Router credential.
+
+---
+
+## 📜 License
+
+MIT License — xem [LICENSE](../LICENSE). Copyright © 2026 北京爱阿科技有限公司 (upstream) + fork contributor.

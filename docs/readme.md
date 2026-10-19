@@ -1,17 +1,17 @@
-# Toonflow 文档目录
+# Mục lục tài liệu Toonflow
 
-[返回项目首页](../README.md)
+[Quay lại trang chủ](../README.md)
 
-## 项目介绍
+## Giới thiệu project
 
-| README 语言 | 入口 |
+| Ngôn ngữ README | Điểm vào |
 | --- | --- |
-| 简体中文 | [README](../README.md) |
+| Tiếng Việt / English (commercial fork) | [README](../README.md) |
 | 繁體中文 | [README](./readme/readmeZhTw.md) |
-| English | [README](./readme/readmeEn.md) |
+| English (upstream) | [README](./readme/readmeEn.md) |
 | 日本語 | [README](./readme/readmeJa.md) |
 | Русский | [README](./readme/readmeRu.md) |
-| Tiếng Việt | [README](./readme/readmeVi.md) |
+| Tiếng Việt (upstream) | [README](./readme/readmeVi.md) |
 | ไทย | [README](./readme/readmeTh.md) |
 | 한국어 | [README](./readme/readmeKo.md) |
 | हिन्दी | [README](./readme/readmeHi.md) |
@@ -28,28 +28,43 @@
 | فارسی | [README](./readme/readmeFa.md) |
 | Türkçe | [README](./readme/readmeTr.md) |
 
-项目介绍提供以上 21 种语言版本，与[应用支持的语言](../README.md#languages)保持一致。
+README gốc của fork này (`README.md`) được viết lại cho commercial edition; các bản dịch trong `docs/readme/` là upstream README giữ nguyên để tham khảo.
 
-## 使用与开发
+## Sử dụng & phát triển
 
-- [使用教程](https://qcn7xdsqgc4z.feishu.cn/docx/RXFqdgR2Xo0dXZxGfd0cZCGgnwf)：日常操作与创作流程。
-- [开发与扩展指南](./development.md)：源码运行、插件扩展、桌面打包和更新发布。
-- [Android 说明](../apps/mobile/readme.md)：ARM64 APK、本地运行、设备互联与构建。
-- [贡献指南](../CONTRIBUTING.md)与[开发规范](../AGENTS.md)：参与项目的约定。
-- [多语言维护说明](../packages/i18n/readme.md)：字典抽取、动态文案、前后端接入和语言回退。
-- [多语言回归记录](../packages/i18n/regression.md)：已完成的检查与已知范围。
-- [MCP 接入说明](../packages/mcp/README.md)：外部客户端连接与工具能力。
+- [Hướng dẫn sử dụng](https://qcn7xdsqgc4z.feishu.cn/docx/RXFqdgR2Xo0dXZxGfd0cZCGgnwf): thao tác hàng ngày và quy trình sáng tạo.
+- [Hướng dẫn phát triển & mở rộng](./development.md): chạy từ source, mở rộng plugin, đóng gói desktop và phát hành update.
+- [Hướng dẫn Android](../apps/mobile/readme.md): ARM64 APK, chạy local, kết nối thiết bị và build.
+- [Hướng dẫn đóng góp](../CONTRIBUTING.md) và [quy tắc phát triển](../AGENTS.md): quy ước khi tham gia project.
+- [Hướng dẫn i18n](../packages/i18n/readme.md): dictionary extraction, dynamic text, frontend/backend integration và language fallback.
+- [Bản ghi i18n regression](../packages/i18n/regression.md): kiểm tra đã hoàn thành và phạm vi đã biết.
+- [Hướng dẫn MCP](../packages/mcp/README.md): kết nối client bên ngoài và tool capability.
 
-## 目录约定
+## Clean-room porting specs
+
+Spec mức hành vi cho việc port tính năng ArcReel vào Toonflow (không copy code/prompt/schema AGPL):
+
+| Spec | File |
+| --- | --- |
+| Gap matrix | `C:/Projects/toonflow-port-specs/00-gap-matrix.md` |
+| Durable generation jobs | `C:/Projects/toonflow-port-specs/01-durable-generation-jobs.md` |
+| Final cut assembly | `C:/Projects/toonflow-port-specs/02-final-cut-assembly.md` |
+| Episode ledger & structured script | `C:/Projects/toonflow-port-specs/03-episode-ledger-structured-script.md` |
+| Typed assets & consistency | `C:/Projects/toonflow-port-specs/04-typed-assets-consistency-versioning.md` |
+| Cost estimation & billing | `C:/Projects/toonflow-port-specs/05-cost-estimation-billing-ledger.md` |
+
+Quy tắc clean-room và checklist thương mại xem [AGENTS.md](../AGENTS.md) section A và section J.
+
+## Quy ước thư mục
 
 ```text
 docs/
-  readme.md          文档入口
-  development.md     开发与扩展指南
-  readme/            各语言项目介绍
-  images/            标识、认证与社区图片
-    screenshots/     产品截图
-    sponsors/        赞助商图片
+  readme.md          Điểm vào tài liệu
+  development.md     Hướng dẫn phát triển & mở rộng
+  readme/            Upstream README các ngôn ngữ (tham khảo)
+  images/            Logo, cert và image cộng đồng
+    screenshots/     Ảnh chụp sản phẩm
+    sponsors/        Ảnh sponsor upstream
 ```
 
-各子包的实现与维护说明保留在对应 `packages/` 目录。更新项目介绍时，以根目录 `README.md` 为准同步其余二十份译版；图片统一复用 `images/`，移动文件时同时更新 Markdown 和 HTML 中的相对链接。
+Implementation + maintenance note của từng subpackage giữ trong `packages/` tương ứng. Khi cập nhật project intro, root `README.md` là chuẩn; các bản dịch trong `readme/` giữ nguyên upstream. Image dùng chung `images/`; khi move file, cập nhật cả relative link trong Markdown và HTML.

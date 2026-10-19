@@ -1,43 +1,68 @@
-本规范适用于整个仓库。
+Quy tắc này áp dụng cho toàn bộ repository.
 
-# 开发规范说明
+# Hướng dẫn phát triển & Clean-Room Porting
 
-## 代码风格要求
+Mục tiêu của fork này (`zetzet7298/Toonflow-app`) là xây dựng một nền tảng thương mại hóa được (MIT-licensed) để tạo phim ngắn AI từ tiểu thuyết, kết hợp canvas của Toonflow với các tính năng pipeline nâng cao từ ArcReel **mà không vi phạm bản quyền AGPL-3.0**.
 
-1. 优先使用简洁直接的实现方案：减少嵌套层级、删除冗余分支、避免不必要的抽象，保证代码可读性优先。
-2. 函数保持小而聚焦，仅当复用价值或可读性有明确提升时才做逻辑抽取。
-3. 自有函数名、变量、计算属性、ref、方法、事件处理函数统一使用小驼峰（lowerCamelCase）命名；第三方 import 保留原始导出名，不为转换大小写添加 `as` 别名。
-4. 模板中的 DOM 类名、对应的样式选择器统一使用小驼峰，例如 `leftMenu`、`panelHeader`、`fileTreeItem`，SCSS 需按照 DOM 结构嵌套书写。
-5. 不使用全大写常量，优先使用语义化小驼峰命名，例如 `editorConfig`、`requestTimeout`、`panelWidth`。
-6. 新增逻辑前优先复用已有的工具函数和 Store 方法，避免新增不必要的工具层。
-7. 所有新建文件、文件夹名称必须统一使用小驼峰**，无任何例外，例如 `userStore.ts`、`fileTree.ts`、`apiHelper.ts`、`editorPanel/`、`contextMenu/`。
-8. **禁止使用短横线命名、蛇形命名、帕斯卡命名或全大写格式作为文件/文件夹名**，项目中已存在的例外情况不作为新开发的参考依据。
-9. **组件文件名同样严格遵循小驼峰规则**，例如 `tabHeader.ts`、`splitPane.ts`、`loginForm.ts`，禁止使用 `TabHeader.ts` 或 `tab-header.ts` 这类格式。
-10. **自有组件（项目内自己编写的组件）的文件名、本地绑定名和模板标签必须使用小驼峰**，例如 `showBox.vue`、`import showBox from "./showBox.vue"`、`<showBox />`，不得使用 `<show-box />`。
-11. **第三方 UI/组件库的模板标签允许使用短横线分隔（kebab-case）或小驼峰，优先统一使用短横线分隔**，例如 `<el-button />`、`<vue-flow />`、`<icon-map />`；此规则不放宽自有文件、变量或 DOM 类名的小驼峰要求。
-12. **所有组件模板标签及自有组件本地绑定名绝对禁止大驼峰（PascalCase）**，例如禁止 `<ShowBox />`、`<ElButton />`、`<VueFlow />`。第三方组件直接按库原始导出名导入，例如 `import { ElButton } from "element-plus"`、`import { VueFlow } from "@vue-flow/core"`，模板分别使用 `<el-button />`、`<vue-flow />`；脚本及模板表达式直接使用原始导出名，不添加仅用于转小驼峰的 `as` 别名。类型名、库导出名及工具自动生成的声明不属于模板标签，不手工改写自动生成文件。
-13. **所有 `.vue` 文件的顶层结构必须按 `<template>` → `<script>` → `<style>` 的顺序排列**，`<script setup>` 同样遵循此顺序；不需要的区块可以省略，但已有区块的相对顺序不得改变。
-14. **所有组件的属性名必须统一使用小驼峰，包括自有组件、第三方组件的 props 声明、静态属性和动态绑定**，例如 `showArrow`、`:nodeTypes`、`:snapToGrid`，禁止写成 `show-arrow`、`:node-types`、`:snap-to-grid`。具名 `v-model` 的参数同样使用小驼峰，例如 `v-model:snapEnabled`。组件标签允许短横线的规则不适用于属性名。
-15. **仅 Vue 语法、HTML 标准或第三方接口强制要求的名称保留原始写法**，例如 `v-if`、`v-for`、`v-model`、`v-bind`、`v-on`、`aria-label`、`data-*`；不得将这些名称改为小驼峰。第三方文档中的短横线示例不构成例外，支持小驼峰的组件属性仍必须使用小驼峰。
+Tất cả các agent, dev và AI tool làm việc trong repo này **bắt buộc** tuân thủ bộ quy tắc clean-room dưới đây.
 
-## 插件与脚手架边界
+---
 
-- 插件专属的组件、交互、提示词、预设和业务逻辑放在所属插件中；打光、图片编辑、视频播放器等功能通过所属插件的公开导出复用。
-- 跨插件共享组件与业务逻辑统一放在 `packages/nodeShared`，作为独立包 `@toonflow/node-shared`，按公开子路径导入。
-- `packages/nodeScaffold` 仅提供通用的节点基础能力、构建配置与宿主接口；插件专属功能和上述共享业务不能混入脚手架。
+## A. Quy tắc Clean-Room Porting (Bắt buộc khi port từ ArcReel)
 
-## 统一文件操作入口
+ArcReel (`https://github.com/ArcReel/ArcReel`) là AGPL-3.0. Khi implement các tính năng trong `C:/Projects/toonflow-port-specs/` (hoặc khi đọc ArcReel để tham khảo):
 
-- 自有代码的磁盘操作统一使用 `@toonflow/file`；Bun 文件对象与写入使用 `@toonflow/file/bun`。直接调用原生 `fs`、`fs/promises`、`Bun.file`、`Bun.write` 仅限 `packages/file` 的实现，不在各模块重复封装底层操作。CI 尚未安装依赖的准备步骤、没有源码和依赖的发布步骤保留运行器原语；已安装工作区依赖的 CI 脚本仍使用统一入口。
-- `file` 子包只负责文件原语、原子写入和按路径协调队列。全局文件与工作区文件的统一入口放在各自业务模块，路径授权、工作区边界校验和业务冲突锁继续由模块负责。
-- 覆盖保存 JSON、画布、配置记录等完整快照时显式使用 `writeAtomic`；必须同步保存时使用 `writeAtomicSync`。仅新建使用 `exclusive` 或保留原有 `flag: "wx"`，不能用先检查存在再覆盖代替。
-- HTTP 传输适配、SDK 持久化、安装备份与回滚等事务留在所属模块，不放进 `file` 子包，也不全局修改原生 `fs` 或重写第三方 SDK 的磁盘协议。
+1. **Không copy biểu thức (expression)**: Không bao giờ copy-paste, translate từng dòng, hoặc viết lại cấu trúc file/function/class giống hệt ArcReel. Dịch Python sang TypeScript vẫn tính là derivative work nếu bám sát code gốc.
+2. **Chỉ học hành vi (behavior)**: Đọc ArcReel chỉ để hiểu *cái gì* nó làm (luồng nghiệp vụ, state machine, edge case, quy tắc bất biến). Viết code mới hoàn toàn theo kiến trúc TypeScript của Toonflow.
+3. **Đặt tên lại hoàn toàn**: Không dùng tên hàm, biến, class, file, table, column, JSON field, prompt text, hoặc error message của ArcReel. Từ chung như `episode`, `shot`, `character`, `queue`, `lease`, `stale` thì được phép, nhưng phải dùng naming convention của Toonflow (`lowerCamelCase`).
+4. **Không copy prompt/skill**: Tất cả prompt hệ thống, `SKILL.md`, template, hoặc i18n string trong ArcReel là nội dung có bản quyền. Viết prompt riêng cho Toonflow.
+5. **Spec là single source of truth**: Implement chỉ theo `C:/Projects/toonflow-port-specs/*.md`. Spec đã được viết clean-room (mô tả behavior, không chứa code ArcReel). Nếu spec thiếu chi tiết, hỏi lại để bổ sung spec thay vì đọc ArcReel trực tiếp.
+6. **Ghi chú provenance**: Trong file spec hoặc comment design, ghi rõ "Behavior-level spec authored after reviewing a third-party AGPL project; contains no copied expression."
 
-## 前端工作区文件操作
+---
 
-- `apps/web/src/lib/workspaceFiles.ts` 默认导出 `useWorkspaceFiles`。组件与前端工具统一复用此入口，不重复封装 Axios 或直接拼接 `/api/workspaces/files/*` 请求。
-- 方法中的 `path`、`target` 均为工作区内的相对路径，例如 `画布1.json`、`assets/image.png`；目录参数使用绝对路径。
-- 不传目录时，使用 Pinia 中当前项目的工作目录，每次操作重新读取；在 Pinia 初始化后的组件 `setup` 中创建实例。未选择工作目录时操作报错。
+## B. Quy tắc Code Style (Giữ nguyên từ Toonflow gốc)
+
+1. Ưu tiên giải pháp đơn giản trực tiếp: giảm lớp lồng, xóa nhánh thừa, tránh abstraction không cần thiết, đảm bảo code dễ đọc.
+2. Hàm nhỏ và tập trung; chỉ tách logic khi có lợi ích rõ ràng về tái sử dụng hoặc khả năng đọc.
+3. Tên hàm, biến, computed, ref, method, event handler tự viết dùng `lowerCamelCase`; third-party import giữ nguyên export name, không dùng `as` alias chỉ để đổi case.
+4. Tên class DOM trong template và selector style dùng `lowerCamelCase` (ví dụ `leftMenu`, `panelHeader`, `fileTreeItem`); SCSS viết theo cấu trúc DOM lồng nhau.
+5. Không dùng hằng số viết hoa toàn bộ; dùng semantic lowerCamelCase (`editorConfig`, `requestTimeout`, `panelWidth`).
+6. Trước khi viết logic mới, ưu tiên tái sử dụng utility và Store method đã có; tránh tạo utility layer không cần thiết.
+7. Tất cả file/folder mới phải dùng `lowerCamelCase`, không ngoại lệ (`userStore.ts`, `fileTree.ts`, `apiHelper.ts`, `editorPanel/`).
+8. Cấm `kebab-case`, `snake_case`, `PascalCase` hoặc `UPPERCASE` cho tên file/folder.
+9. Component file cũng phải `lowerCamelCase` (`tabHeader.ts`, `splitPane.ts`, `loginForm.ts`).
+10. Component tự viết: tên file, local binding, template tag đều `lowerCamelCase` (`showBox.vue`, `import showBox from "./showBox.vue"`, `<showBox />`); không dùng `<show-box />`.
+11. Third-party UI/component library tag được phép dùng `kebab-case` hoặc `lowerCamelCase`, ưu tiên `kebab-case` (`<el-button />`, `<vue-flow />`).
+12. Cấm `PascalCase` cho tất cả template tag và local binding (`<ShowBox />`, `<ElButton />`, `<VueFlow />`). Third-party component import theo export name gốc (`import { ElButton } from "element-plus"`).
+13. Mọi file `.vue` phải theo thứ tự `<template>` → `<script>` → `<style>`; `<script setup>` cũng tuân thủ. Có thể bỏ block không cần thiết nhưng không đổi thứ tự.
+14. Tất cả prop name (component tự viết và third-party) phải `lowerCamelCase` (`showArrow`, `:nodeTypes`, `:snapToGrid`); cấm `show-arrow`, `:node-types`, `:snap-to-grid`. Named `v-model` cũng dùng `lowerCamelCase` (`v-model:snapEnabled`).
+15. Chỉ giữ nguyên tên gốc cho Vue syntax, HTML standard hoặc third-party forced (`v-if`, `v-for`, `v-model`, `v-bind`, `v-on`, `aria-label`, `data-*`); không đổi sang `lowerCamelCase`.
+
+---
+
+## C. Plugin & Scaffold Boundaries
+
+- Component, interaction, prompt, preset và business logic thuộc plugin phải nằm trong plugin đó; lighting, image editing, video player được tái sử dụng qua public export của plugin.
+- Component và business logic dùng chung giữa các plugin đặt trong `packages/nodeShared` (package `@toonflow/node-shared`), import theo public subpath.
+- `packages/nodeScaffold` chỉ cung cấp năng lực node cơ bản, build config và host interface; không trộn plugin-specific feature hoặc shared business vào scaffold.
+
+---
+
+## D. Unified File Operation Entry
+
+- Disk operation trong code tự viết dùng `@toonflow/file`; Bun file object và write dùng `@toonflow/file/bun`. Gọi trực tiếp `fs`, `fs/promises`, `Bun.file`, `Bun.write` chỉ được phép trong `packages/file`.
+- `file` subpackage chỉ chịu trách nhiệm primitive, atomic write và path-coordinated queue. Entry thống nhất cho global file và workspace file nằm ở business module.
+- Khi ghi đè JSON, canvas, config record (full snapshot) phải dùng `writeAtomic`; bắt buộc sync thì dùng `writeAtomicSync`. Tạo mới dùng `exclusive` hoặc `flag: "wx"`, không dùng check-exists-then-overwrite.
+- HTTP transport adapter, SDK persistence, install backup/rollback giữ trong module chủ sở hữu; không đưa vào `file` subpackage và không global-modify `fs` hoặc rewrite third-party SDK disk protocol.
+
+---
+
+## E. Frontend Workspace File Operation
+
+- `apps/web/src/lib/workspaceFiles.ts` default-export `useWorkspaceFiles`. Component và frontend tool dùng chung entry này, không tự wrap Axios hoặc nối `/api/workspaces/files/*`.
+- `path`, `target` trong method là relative path trong workspace (`画布1.json`, `assets/image.png`); `directory` là absolute path.
+- Không truyền `directory` thì đọc từ Pinia `project.directory`; tạo instance trong `setup` sau khi Pinia init. Chưa chọn workspace thì throw error.
 
 ```ts
 import useWorkspaceFiles from "@/lib/workspaceFiles";
@@ -48,12 +73,12 @@ const content = await files.readText("说明.txt");
 await files.write("说明.txt", content);
 ```
 
-### 目录绑定
+### Directory Binding
 
-- `useWorkspaceFiles(directory)`：传入目录字符串，固定该实例的目标目录；普通 TypeScript 工具函数可直接使用，不依赖当前 Pinia 实例。
-- `useWorkspaceFiles(directoryRef)` 或 `useWorkspaceFiles(() => props.directory)`：传入 ref 或 getter，每次操作读取最新值；显式目录为空时直接报错，不回退到当前项目。
-- 新建项目尚未更新 Pinia 时，显式传入用户选择的目录；`list()` 返回服务端规范化后的 `directory`，后续创建与失败回滚使用同一规范目录。
-- 防抖、保存队列、跨 `await` 的多步操作必须在操作开始时取得目录字符串快照，后续步骤复用固定目录实例，避免切换项目后读写到另一个目录。自动保存与防抖仍由所属页面管理，文件封装不自动监听或保存数据。
+- `useWorkspaceFiles(directory)`: fixed directory cho instance; dùng được trong TypeScript utility không phụ thuộc Pinia.
+- `useWorkspaceFiles(directoryRef)` hoặc `useWorkspaceFiles(() => props.directory)`: ref hoặc getter, đọc giá trị mới nhất mỗi lần; explicit directory rỗng thì throw error, không fallback về project hiện tại.
+- Project mới chưa update Pinia thì truyền explicit directory; `list()` trả về `directory` đã normalize từ server.
+- Debounce, save queue, hoặc multi-step operation xuyên `await` phải chụp `directory` string snapshot lúc bắt đầu rồi dùng fixed directory instance.
 
 ```ts
 import useWorkspaceFiles from "@/lib/workspaceFiles";
@@ -70,157 +95,174 @@ async function renameJsonFile(path: string, target: string) {
 }
 ```
 
-### 方法与返回值
+### Methods
 
-所有文件操作均返回 Promise；写入、改名、删除、建目录成功时无返回内容。
-
-| 方法 | 用法与返回值 |
+| Method | Công dụng |
 | --- | --- |
-| `list(path = "")` | 列出一层目录，返回 `{ directory, entries }`；每项包含 `name`、相对 `path`、`type`（`file` 或 `directory`）。 |
-| `read(path)` | 读取二进制，返回 `ArrayBuffer`。 |
-| `readText(path, maxBytes?)` | 读取文本，返回字符串；传入正整数 `maxBytes` 时通过 HTTP Range 只读取文件头指定字节数。 |
-| `readJson<T = unknown>(path)` | 读取并解析 JSON，返回 `T`；泛型仅提供类型提示，不校验文件结构。 |
-| `write(path, content, exclusive = false)` | 写入字符串、`Blob` 或 `ArrayBuffer`；默认创建或覆盖整个文件，第三个参数传 `true` 时只允许新建。 |
-| `writeJson(path, data, exclusive = false)` | 将数据格式化为 JSON 后写入；第三个参数传 `true` 时只允许新建。 |
-| `rename(path, target)` | 在工作区内改名或移动文件、目录；目标已存在时不覆盖。 |
-| `remove(path, recursive = false)` | 删除文件或空目录；显式传 `true` 才递归删除目录内容。 |
-| `mkdir(path)` | 创建目录；父目录须存在，不自动递归创建。 |
+| `list(path = "")` | Liệt kê 1 level, trả `{ directory, entries }`; mỗi item có `name`, `path`, `type` (`file`/`directory`). |
+| `read(path)` | Đọc binary, trả `ArrayBuffer`. |
+| `readText(path, maxBytes?)` | Đọc text; truyền `maxBytes` dương thì dùng HTTP Range chỉ đọc header. |
+| `readJson<T = unknown>(path)` | Đọc + parse JSON, trả `T`; generic chỉ là type hint, không validate. |
+| `write(path, content, exclusive = false)` | Ghi string, `Blob` hoặc `ArrayBuffer`; mặc định create/overwrite toàn bộ; `exclusive = true` chỉ cho create mới. |
+| `writeJson(path, data, exclusive = false)` | Format JSON rồi ghi; `exclusive = true` chỉ cho create mới. |
+| `rename(path, target)` | Đổi tên/di chuyển file/dir trong workspace; target đã tồn tại thì không overwrite. |
+| `remove(path, recursive = false)` | Xóa file hoặc dir rỗng; truyền `true` mới recursive delete. |
+| `mkdir(path)` | Tạo dir; parent phải tồn tại, không tự recursive create. |
 
-- 文件的标记字段和业务结构由调用方负责，例如画布的 `toonflowCanvas`、对话的 `toonflowAgent`；不能因调用了 `readJson<T>` 就假定结构有效。
-- 所有请求错误原样抛给调用方处理，JSON 解析失败抛出 `SyntaxError`；不要吞掉写入失败或无条件重试。新增文件的自动编号只处理服务端明确返回的同名冲突。
-- 此封装只负责工作区文件；全局设置继续使用设置接口，项目列表继续由 Pinia 持久化，移除列表项不等于删除工作区文件。
+- Flag field và business structure do caller chịu trách nhiệm (ví dụ `toonflowCanvas`, `toonflowAgent`); không vì dùng `readJson<T>` mà giả định structure hợp lệ.
+- Request error throw nguyên bản ra caller; JSON parse fail throw `SyntaxError`; không nuốt write error hoặc retry vô điều kiện.
+- Wrapper chỉ lo workspace file; global setting dùng setting API, project list dùng Pinia persist, xóa list item không xóa workspace file.
 
-## Server 开发规范
+---
 
-以下规则适用于 `apps/server`，与上面的通用代码规范同时遵守。
+## F. Server Development Rules (`apps/server`)
 
-### 技术栈与职责
+### Stack & Responsibility
 
-- 使用 Bun、TypeScript、ES Modules 和 Express，沿用现有依赖与工具，不另建服务框架。
-- `src/index.ts` 是独立 server 的启动入口，单进程监听端口。
-- `src/app.ts` 的 `createApp({ webRoot, dataDirectory?, ... })` 负责创建应用、装配中间件、静态资源、路由和统一错误处理，返回应用；传入的数据目录须在动态加载路由前设置。不要在这里启动监听或创建 worker。
-- 桌面端通过 `@toonflow/server/app` 复用应用，不导入独立 server 的启动入口，不额外启动 cluster。
+- Bun, TypeScript, ES Modules, Express; dùng dependency và tool hiện có, không tạo service framework mới.
+- `src/index.ts` là entry của standalone server, single process lắng nghe port.
+- `src/app.ts` `createApp({ webRoot, dataDirectory?, ... })` tạo app, middleware, static, route và unified error handling; `dataDirectory` phải set trước khi dynamic-load route. Không start listen hoặc tạo worker ở đây.
+- Desktop dùng `@toonflow/server/app`, không import standalone entry, không tự start cluster.
 
-### 目录结构
+### Directory Structure
 
 ```text
 apps/server/
   package.json
   tsconfig.json
   src/
-    index.ts                 # 独立服务启动
-    app.ts                   # Express 应用装配
-    core.ts                  # 根据文件目录生成路由
-    router.ts                # 自动生成的路由注册文件
-    utils.ts                 # 通用工具统一出口，默认导出对象
+    index.ts                 # standalone server startup
+    app.ts                   # Express app assembly
+    core.ts                  # file-directory route generation
+    router.ts                # auto-generated route registration
+    utils.ts                 # unified utility export (default object)
     utils/
-      conf/index.ts          # conf 实例与配置
-      mcp/                   # MCP 控制、工具和资源
+      conf/index.ts          # conf instance & config
+      mcp/                   # MCP control, tools, resources
     lib/
-      middleware.ts          # 参数校验等 HTTP 中间件
-      responseFormat.ts      # 统一响应格式
+      middleware.ts          # HTTP middleware (validateFields...)
+      responseFormat.ts      # unified response format
     routes/
-      hello.ts               # 单个接口
-      settings/              # 按业务分类
-        get.ts               # 读取设置接口
-        save.ts              # 保存设置接口
+      hello.ts               # single endpoint
+      settings/              # business folder
+        get.ts               # read settings
+        save.ts              # save settings
 ```
 
-- 文件、目录、变量和函数统一小驼峰命名。业务按文件夹分层，层级已有语义时，文件名不重复堆叠业务名称，例如 `settings/get.ts`。
-- **一个接口一个文件。** 每个路由文件只注册一个 HTTP 方法与路径，默认导出对应 Express Router；读取、保存等接口必须拆开。
-- `routes/` 下的 `.ts` 文件都会被当作路由模块扫描，不能把工具、类型、配置或单纯的目录聚合文件放进去。
-- 工具实现按业务模块放到 `utils/*/`，例如 `utils/mcp/control.ts`；文件名不重复模块前缀，通过 `utils.ts` 暴露。HTTP 中间件及响应格式放 `lib/`。不为简单接口额外搭建 controller、service、repository 等层。
+- File, folder, biến, function đều `lowerCamelCase`. Business theo folder; khi folder đã có ngữ nghĩa thì file name không lặp lại prefix (`settings/get.ts`).
+- **Một interface một file.** Mỗi route file chỉ register 1 HTTP method + 1 path, default-export Express Router; read/save phải tách file.
+- File `.ts` trong `routes/` đều được scan làm route module; không đặt utility, type, config hoặc folder aggregator vào đây.
+- Utility implementation theo business module (`utils/*/`), ví dụ `utils/mcp/control.ts`; file name không lặp module prefix, expose qua `utils.ts`. HTTP middleware và response format đặt trong `lib/`. Không tạo thêm controller/service/repository layer cho endpoint đơn giản.
 
-### 路由与路径规则
+### Route & Path Rules
 
-- `core.ts` 扫描 `src/routes/**/*.ts`，根据文件相对路径生成 `/api` 前缀的路由；接口文件内使用 `"/"`，不要重复填写 `/api` 或业务目录。
-- URL 使用 `/` 分隔，路径大小写与目录、文件名一致。`index.ts` 对应所在目录本身，不产生 `/index`。
-- 当前设置接口映射如下，HTTP 方法由接口文件注册语句决定，文件名不会自动决定方法：
+- `core.ts` scan `src/routes/**/*.ts`, tạo route `/api` theo relative path; file route dùng `"/"`, không lặp `/api` hoặc business folder.
+- URL dùng `/` phân cách, case theo folder/file name. `index.ts` map vào chính folder đó, không tạo `/index`.
+- Ví dụ mapping:
 
-| 文件 | HTTP 方法 | 请求路径 |
+| File | Method | Request path |
 | --- | --- | --- |
 | `src/routes/settings/get.ts` | `GET` | `/api/settings/get` |
 | `src/routes/settings/save.ts` | `PUT` | `/api/settings/save` |
 
-- **不要手工维护 `src/router.ts` 的 imports、注册项或 hash。** 新增、移动、重命名或删除接口文件后，在 `apps/server` 执行 `bun run routes`。
-- 自动生成的 `route1` 等名称由生成器维护，不手工重命名。`createApp` 仅在 `NODE_ENV === "dev"` 时自动生成路由，不假定启动、监听文件变化或构建会自动补齐路由。
-- 改动路径或 HTTP 方法前搜索所有调用方，同步更新调用；文件归档不应意外改变配置文件、静态资源等磁盘路径。
+- **Không sửa tay `src/router.ts`**. Thêm/di chuyển/rename/xóa route file xong chạy `bun run routes` trong `apps/server`.
+- `route1`… do generator quản lý, không đổi tay. `createApp` chỉ auto-generate route khi `NODE_ENV === "dev"`; không giả định startup, watch hoặc build tự fill route.
+- Trước khi đổi path hoặc HTTP method, grep tất cả caller và update đồng bộ.
 
-### 引用与代码风格
+### Import & Code Style
 
-- server 的 `@/` 指向 `apps/server/src/`，业务代码优先使用该别名，例如 `@/utils`、`@/lib/middleware`。不要把 `@/` 当作仓库根目录，也不要使用本机绝对路径或长串 `../../` 引用业务模块。
-- 通用工具统一使用 `import u from "@/utils"`，例如 `u.conf`；具体工具的引入与导出由 `utils.ts` 管理，接口不绕过统一入口重复初始化工具。
-- 跨工作区包使用包名及其声明的 exports，例如 `@toonflow/server/app`，不要直接穿透其他包的 `src/` 路径。
-- 第三方库使用包名导入，新增 Node 内置模块引用使用 `node:` 前缀；仅用于类型的引用使用 `import type`。
-- 第三方函数、类直接使用原始导出名，例如 `import { Router } from "express"`、`import conf from "conf"`；不为转小驼峰添加 `as` 别名，仅在名称冲突等确有必要的情况下使用别名。类型名保留 TypeScript 的类型命名习惯。
-- 使用双引号、分号、两空格缩进，保持现有文件格式。文件按 imports、必要声明、接口注册与导出的顺序组织；删除未使用的 import 和变量。
-- 路由内直接完成小而清晰的逻辑；只有实际复用或可读性收益时才提取函数。仅在需要等待异步操作时使用 `async`，不添加无意义的包装。
+- Server alias `@/` trỏ `apps/server/src/`; dùng `@/utils`, `@/lib/middleware`. Không dùng `@/` làm repo root, không dùng absolute path hoặc `../../` dài.
+- Utility thống nhất `import u from "@/utils"` (ví dụ `u.conf`); interface không bypass `utils.ts` để init tool riêng.
+- Cross-package dùng package name + exports (`@toonflow/server/app`), không xuyên `src/` của package khác.
+- Third-party lib dùng package name; Node built-in dùng `node:` prefix; type-only dùng `import type`.
+- Third-party function/class giữ export name gốc (`import { Router } from "express"`, `import conf from "conf"`); không `as` chỉ để đổi case trừ khi conflict.
+- Double quote, semicolon, 2-space indent. File order: imports → declarations → route register/export. Xóa unused import/variable.
+- Route file xử lý logic nhỏ trực tiếp; chỉ extract function khi có lợi ích thực. Chỉ `async` khi cần `await`; không wrap vô nghĩa.
 
-### 参数校验、响应与错误处理
+### Validation, Response & Error
 
-- 外部输入使用现有 `validateFields` 与 Zod 校验，字段规则放在所属接口中；默认校验 `body`，查询参数与路径参数显式指定 `"query"`、`"params"`。
-- `validateFields` 当前只校验，不将解析结果写回请求。不能假定 Zod 的默认值、转换或裁剪已应用到 `req.body` 等对象；需要规范化时显式处理。
-- JSON 响应复用 `success`、`error`，保持 `{ code, data, message }` 结构。这两个函数只包装响应体，不设置 HTTP 状态；需要时显式使用 `res.status(...)`，使错误状态码与响应语义一致。不要在单个接口另造响应格式。
-- 普通异常交由 `app.ts` 的统一错误处理中间件处理，禁止吞掉写入失败后返回成功。流式接口已发送响应头后，应沿用流内错误处理和资源清理方式。
+- External input dùng `validateFields` + Zod; rule đặt trong endpoint file. Mặc định validate `body`; query/path param dùng `"query"`/`"params"`.
+- `validateFields` chỉ validate, không ghi kết quả parse vào `req.body`; cần normalize thì xử lý explicit.
+- JSON response dùng `success`, `error` giữ `{ code, data, message }`. Chúng chỉ wrap body, không set HTTP status; cần thì dùng `res.status(...)` rõ ràng.
+- Exception thường để `app.ts` unified error handler xử lý; cấm nuốt write error rồi return success. Stream endpoint đã gửi header thì dùng in-stream error + cleanup.
 
-### 配置与持久化
+### Config & Persistence
 
-- `conf` 只在 `src/utils/conf/index.ts` 初始化，通过 `src/utils.ts` 统一导出，接口使用 `u.conf`。不要在每个接口或每次请求中创建实例。
-- 配置统一存为数据目录下的 `settings.json`，保持 `configName: "settings"`、`configFileMode: 0o600`。开发环境使用仓库根目录 `data/`，该目录必须被 Git 忽略；生产环境使用安装目录下的 `data/`，不再使用默认用户配置目录。
-- 启动入口通过 `createApp` 在路由加载前确定 `TOONFLOW_DATA_DIR`，读写必须使用同一目录。独立 server 从源码或 `build/server` 所在位置定位应用根目录；桌面开发脚本显式传入仓库根目录的 `data/`，不要依赖启动时的 `process.cwd()`。
-- Windows 桌面使用实际安装根目录的 `data/`（与可更新的 `app/` 同级），macOS 使用 `.app` 所在目录的 `data/`。不要写入可被更新替换的程序资源或应用包内部。
-- 当前保存接口接收 `{ settings: { ... } }`，使用 `z.record(z.string(), z.json())` 校验设置对象；完整覆盖保存，读取时返回 `settings`，未保存时返回 `{}`。
-- 未经相关需求，不将完整覆盖改成部分合并。工具实例与文件占用状态是进程内单例，不支持多进程并发写入同一工作区。
+- `conf` chỉ init trong `src/utils/conf/index.ts`, export qua `src/utils.ts`, interface dùng `u.conf`. Không tạo instance mỗi endpoint/request.
+- Config lưu `data/settings.json`, `configName: "settings"`, `configFileMode: 0o600`. Dev dùng repo root `data/` (Git ignore); production dùng install dir `data/`.
+- `createApp` xác định `TOONFLOW_DATA_DIR` trước khi load route; standalone server locate app root từ source hoặc `build/server`; desktop dev script truyền repo root `data/`, không phụ thuộc `process.cwd()`.
+- Windows desktop dùng `data/` cạnh `app/`; macOS dùng `data/` cạnh `.app`. Không ghi vào program resource hoặc app bundle bị update thay thế.
+- Save interface nhận `{ settings: { ... } }`, validate `z.record(z.string(), z.json())`; full overwrite, read trả `settings`, chưa save thì `{}`.
+- Không đổi full overwrite thành partial merge khi không được yêu cầu. Tool instance và file lock là process singleton, không hỗ trợ multi-process concurrent write cùng workspace.
 
-### 验证要求
+### Verification
 
-- 在 `apps/server` 执行命令：路由文件变更后先 `bun run routes`，按改动执行 `bun run typecheck`、`bun run build` 和必要的实际 HTTP 验证。
-- 涉及配置读写的验证使用临时配置目录，检查保存、读取及非法输入，避免覆盖真实用户配置。
-- 测试代码与检查入口遵守下方全仓「测试与检查边界」。只报告实际完成的验证，构建通过不等于接口或持久化行为已经验证。
+- Trong `apps/server`: sau khi đổi route file chạy `bun run routes`; theo thay đổi chạy `bun run typecheck`, `bun run build` và HTTP test thực tế nếu cần.
+- Test config read/write dùng temp config directory để tránh ghi đè user config thật.
+- Chỉ báo cáo kết quả verify thực tế; build pass không đồng nghĩa endpoint hoặc persistence đã verify.
 
-## 输出要求
+---
 
-- 所有回答使用中文，思考过程也需用中文表述
-- 默认使用 TypeScript 编写代码，除非用户明确要求其他语言
-- 代码实现优先提供最小可运行案例，除非用户要求完整实现
-- **只实现用户当前明确要求的内容，不主动完善或扩展功能。** 用户要求新建组件、弹窗或面板时，仅搭建指定结构与交互；未要求的内部内容保持空白，不自行添加占位文案、空状态、输入框、按钮、示例数据、模拟回复或后端逻辑。
-- **按用户指定的阶段推进。** 完成当前要求并做必要验证后停止，等待用户明确提出下一步；清空组件内容时，仅保留用户已要求的外壳与交互。
+## G. Output Requirements
 
-# ACT 资深开发模式
+- Tất cả trả lời dùng **Tiếng Việt** (nếu cần tài liệu kỹ thuật thì giữ English cho code/identifier nhưng mô tả bằng tiếng Việt).
+- Default TypeScript trừ khi user yêu cầu ngôn ngữ khác.
+- Ưu tiên minimal runnable case; chỉ implement đúng yêu cầu, không tự mở rộng.
+- Theo phase user chỉ định; hoàn thành verify xong dừng, chờ bước tiếp theo.
 
-你是一个资深开发。高效，但不敷衍。最好的代码，是压根没写的代码。
+---
 
-动手写代码之前，先停在第一个成立的台阶上：
+## H. ACT Senior Dev Mode
 
-1. 这东西真需要做吗？（YAGNI）
-2. 这仓库里已经有了吗？有现成的工具函数、工具类、写法就拿来用，别重造。
-3. 标准库能做吗？能做就用。
-4. 平台自带的能力覆盖了吗？覆盖了就用。
-5. 已经装好的依赖能解决吗？能就用。
-6. 能一行搞定吗？那就一行。
-7. 到这一步，才动手写能跑的最少代码。
+Bạn là senior dev. Hiệu quả nhưng không cẩu thả. Code tốt nhất là code không phải viết.
 
-爬台阶是在你搞懂问题之后，不是用来代替搞懂问题：先把需求和它牵扯的代码读一遍，把真实链路从头到尾走一遍，再开始爬。
+Trước khi viết code, dừng ở bậc thang đầu tiên đúng:
 
-修 bug 修的是根因，不是症状：别人报的是症状。把你改的那个函数的所有调用方 grep 一遍，在公共函数里改一次——在那儿加一道判断，diff 比在每个调用方各加一道更小；而且只修工单点名的那条路径，兄弟调用方照样是坏的。
+1. Có thật sự cần làm không? (YAGNI)
+2. Repo đã có chưa? Có utility/tool/mẫu sẵn thì dùng lại, đừng viết lại.
+3. Standard library làm được không? Làm được thì dùng.
+4. Platform built-in đã cover chưa? Cover thì dùng.
+5. Dependency đã cài sẵn giải quyết được không? Được thì dùng.
+6. Có 1 dòng là xong không? Xong thì làm.
+7. Đến bước này mới viết code tối thiểu chạy được.
 
-规则：
+Leo thang là sau khi đã hiểu vấn đề: đọc kỹ requirement và code liên quan, chạy hết real link đầu-cuối rồi mới leo.
 
-- 没明确要的抽象，不做。
-- 能不引新依赖就不引。
-- 没人要的样板代码，不写。
-- 删比加好。笨比巧好。文件越少越好。
-- 最短能跑的 diff 最好，但前提是你已经搞懂了问题。改错地方的最小改动，那叫埋第二个 bug。
-- 需求复杂就问一句：“你是真需要 X，还是 Y 就够了？”
-- 两种标准库写法体量差不多时，选边界情况处理对的那个；省的是代码量，不是算法质量。
-- 有意的简化用 `ACT:` 注释标出来。如果这个取舍有已知上限（全局锁、O(n²) 扫描、粗糙启发式），注释里写清楚上限在哪、以后怎么升级。
+Sửa bug là sửa root cause, không phải symptom: grep tất cả caller của function bạn sửa, sửa 1 lần trong public function (diff nhỏ hơn sửa từng caller).
 
-这些事上不省：搞懂问题（选台阶之前先完整读一遍、把真实链路走一遍，不理解就上手改的小 diff，只是给草率套了层高效的皮）、信任边界上的入参校验、防止数据丢失的错误处理、安全、无障碍、真机需要的校准（平台从来不是规格里的理想状态，时钟会飘，传感器会偏）、以及任何被明确点名要的东西。
+Quy tắc:
 
-## 测试与检查边界
+- Không abstraction nếu không ai yêu cầu.
+- Không thêm dependency nếu không cần.
+- Không viết boilerplate không ai cần.
+- Xóa tốt hơn thêm. Đơn giản tốt hơn khéo. File ít tốt hơn.
+- Diff ngắn nhất chạy được là tốt, nhưng phải hiểu vấn đề. Sửa sai chỗ = đặt bug thứ 2.
+- Requirement phức tạp thì hỏi: "Bạn cần X thật hay Y là đủ?"
+- 2 cách standard library tương đương thì chọn cách xử lý edge case đúng hơn.
+- Simplification cố ý dùng `ACT:` comment. Nếu có giới hạn đã biết (global lock, O(n²), heuristic thô) thì ghi rõ giới hạn và cách nâng cấp sau.
 
-- **软件测试由软测人员负责，项目代码中不新增测试模块。** 禁止编写或新增 `.test.ts`、`.spec.ts`、`scripts/check.ts`、`check*.ts` 等测试或自检文件；无论文件叫什么、放在哪里，按实际用途判断。
-- 不得通过改名、临时测试文件、mock/fixture、测试专用导出或封装绕过限制；不在业务源码或注释中嵌入测试断言、自检脚本和 DevTools 自检代码。
-- 不新增测试框架、测试专用依赖、package scripts 中的测试或自检命令，以及 CI 自动测试入口。不把检查、依赖安装和环境准备隐式绑定到开发、构建或其他命令。
-- 开发时可按当前任务显式执行已有的 `typecheck`、构建和必要的手动验证，但不因此新增或保留测试代码；验证结果如实说明，不把编译通过当成功能测试通过。
-- **运行时业务校验必须保留。** 入参校验、权限与路径边界、文件冲突保护、更新检查、安装环境检测和产品调试功能不属于测试模块，不能因为名称包含 `check`、`assert` 或 `debug` 就删除。
+Không tiết kiệm ở: hiểu vấn đề (đọc kỹ trước khi leo thang), validation ở trust boundary, error handling chống mất dữ liệu, security, accessibility, calibration thực tế (clock drift, sensor bias), và mọi thứ được yêu cầu rõ ràng.
+
+---
+
+## I. Testing & Check Boundary
+
+- **Software test do QA phụ trách, repo không thêm test module.** Cấm viết mới `.test.ts`, `.spec.ts`, `scripts/check.ts`, `check*.ts` hoặc file test/self-check khác bất kể tên và vị trí.
+- Không được đổi tên, file test tạm thời, mock/fixture, test-only export hoặc wrapper để bypass giới hạn; không nhúng test assertion, self-check script vào business source hoặc comment.
+- Không thêm test framework, test dependency, test/self-check script vào `package.json`, không thêm CI auto-test entry. Không bind check/install/env prep vào dev/build/command khác.
+- Dev có thể chạy `typecheck`, build và manual verify hiện có cho task hiện tại, nhưng không vì thế mà thêm/giữ test code; chỉ báo cáo verify thực tế, không coi compile pass là function test pass.
+- **Runtime business validation phải giữ.** Input validation, permission/path boundary, file conflict protection, update check, install environment detection và product debug feature không phải test module; không xóa chỉ vì tên chứa `check`, `assert`, `debug`.
+
+---
+
+## J. Commercial Readiness Checklist (Trước khi phát hành thương mại)
+
+Khi build từ fork này cho sản phẩm thương mại, bắt buộc:
+
+1. **Giữ file `LICENSE`** (MIT) và copyright `HBAI-Ltd` trong phân phối.
+2. **Tắt telemetry mặc định**: `apps/web/src/lib/anonymousData.ts:146` và `apps/web/src/stores/settings.ts:85`.
+3. **Đổi branding**: tên app, logo, `api.toonflow.net`, TF-Router, plugin market default endpoint. MIT không cấp quyền dùng tên `Toonflow`.
+4. **Audit dependency license**: kiểm tra `package.json` và transitive dep (đặc biệt GPL/AGPL trong `ffmpeg`, image/video lib, font).
+5. **Audit custom provider sandbox**: `apps/server/src/utils/media/provider.ts:392` dùng `node:vm` không phải sandbox; nếu cho phép user import provider `.ts` thì cần cách ly thực sự hoặc giới hạn quyền.
+6. **Thêm auth**: server hiện không có auth; SaaS hoặc deploy công khai phải thêm auth layer.
+7. **Không dùng ArcReel code**: chỉ dùng spec trong `toonflow-port-specs/`; kiểm tra `git diff` kỹ để đảm bảo không copy-paste code/prompt/schema từ ArcReel.
