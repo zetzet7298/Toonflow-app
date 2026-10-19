@@ -31,8 +31,23 @@ export function getMcpSettings() {
   };
 }
 
+// ACT: dev only — extra origins/hosts (Tailscale IP, LAN alias) for testing
+// the web app from another device. Comma-separated origins or hostnames, e.g.
+//   TOONFLOW_ALLOWED_ORIGINS="http://100.100.116.74:5173,100.100.116.74"
+// Ignored outside NODE_ENV=dev. Production stays loopback-only.
+function devAllowedOrigin(): string[] {
+  if (process.env.NODE_ENV !== "dev") return [];
+  const raw = process.env.TOONFLOW_ALLOWED_ORIGINS ?? "";
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
 function allowedHost(req: Request) {
-  return isMobileLinkRequest(req) || !getRuntimePlatform().requiresLocalHost || ["localhost", "127.0.0.1", "[::1]"].includes(req.hostname);
+  if (isMobileLinkRequest(req) || !getRuntimePlatform().requiresLocalHost) return true;
+  if (["localhost", "127.0.0.1", "[::1]"].includes(req.hostname)) return true;
+  const extras = devAllowedOrigin();
+  if (extras.includes(req.hostname) || extras.includes(req.get("origin") ?? "")) return true;
+  const host = req.get("host") ?? "";
+  return extras.some(o => { try { return host.startsWith(new URL(o.includes("://") ? o : `http://${o}`).hostname); } catch { return false; } });
 }
 
 export function getAppOrigin(req: Request) {
@@ -41,6 +56,8 @@ export function getAppOrigin(req: Request) {
   let url: URL;
   try { url = new URL(source); }
   catch { throw Object.assign(new Error("页面来源无效"), { status: 403 }); }
+  const extras = devAllowedOrigin();
+  if (extras.includes(url.origin) || extras.includes(url.hostname)) return url.origin;
   if (!["http:", "https:"].includes(url.protocol) || url.host !== req.get("host")) throw Object.assign(new Error("页面来源与服务地址不一致"), { status: 403 });
   return url.origin;
 }
