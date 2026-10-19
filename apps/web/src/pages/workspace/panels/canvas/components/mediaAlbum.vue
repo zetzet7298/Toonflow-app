@@ -14,17 +14,7 @@
     <el-scrollbar class="albumScroll" maxHeight="min(480px, calc(100dvh - 198px))">
       <div v-if="!loading && !visibleItems.length" class="albumEmpty">暂无媒体文件</div>
       <div v-else class="albumGrid">
-        <div v-for="item in visibleItems" :key="item.path" class="albumCard" :title="item.path" @click="openPreview(item)">
-          <el-image v-if="item.kind === 'image'" class="cardThumb" :src="assetUrl(item.path)" fit="cover" loading="lazy">
-            <template #error><icon-photo :size="24" /></template>
-          </el-image>
-          <video v-else-if="item.kind === 'video'" class="cardThumb cardVideo" :src="assetUrl(item.path)" muted playsinline preload="metadata" />
-          <div v-else class="cardThumb cardIcon"><icon-music :size="24" /></div>
-          <div class="cardMeta">
-            <span class="cardName">{{ item.name }}</span>
-            <span class="cardKind">{{ item.kind }}</span>
-          </div>
-        </div>
+        <mediaCard v-for="item in visibleItems" :key="item.path" :item="item" :directory="directory" @open="openPreview" />
       </div>
     </el-scrollbar>
     <div class="albumFooter">{{ visibleItems.length }} 个媒体文件{{ truncated ? "（已达扫描上限）" : "" }}</div>
@@ -43,8 +33,9 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { IconMusic, IconPhoto, IconRefresh, IconSearch, IconX } from "@tabler/icons-vue";
+import { IconMusic, IconPhoto, IconRefresh, IconSearch, IconVideo, IconX } from "@tabler/icons-vue";
 import useWorkspaceFiles from "@/lib/workspaceFiles";
+import mediaCard from "./mediaCard.vue";
 
 type MediaKind = "image" | "video" | "audio";
 type AlbumItem = { name: string; path: string; kind: MediaKind };
@@ -59,15 +50,12 @@ const truncated = ref(false);
 const searchQuery = ref("");
 const kindFilter = ref<"all" | MediaKind>("all");
 const previewAsset = ref<{ name: string; url: string; kind: MediaKind }>();
+let previewHandle: { release: () => void } | undefined;
 const previewError = ref("");
 let loadRequest = 0;
 
 const maxItems = 400;
 const maxDepth = 6;
-
-function assetUrl(path: string) {
-  return `/api/assets/read?path=${encodeURIComponent(path)}`;
-}
 
 function mediaKind(name: string): MediaKind | undefined {
   if (/\.(avif|apng|bmp|gif|ico|jpe?g|png|svg|webp)$/i.test(name)) return "image";
@@ -112,10 +100,25 @@ async function refresh() {
   }
 }
 
-function openPreview(item: AlbumItem) {
+async function openPreview(item: AlbumItem) {
   previewError.value = "";
-  previewAsset.value = { name: item.name, url: assetUrl(item.path), kind: item.kind };
+  previewHandle?.release();
+  previewHandle = undefined;
+  previewAsset.value = undefined;
+  const current = files.acquireUrl(item.path);
+  try {
+    const url = await current.url;
+    previewHandle = current;
+    previewAsset.value = { name: item.name, url, kind: item.kind };
+  } catch {
+    current.release();
+    previewError.value = "无法读取文件";
+  }
 }
+
+watch(previewAsset, value => {
+  if (!value && previewHandle) { previewHandle.release(); previewHandle = undefined; }
+});
 
 watch(visible, value => { if (value) refresh(); });
 watch(() => props.directory, () => { if (visible.value) refresh(); });
@@ -123,11 +126,9 @@ watch(() => props.directory, () => { if (visible.value) refresh(); });
 
 <style lang="scss" scoped>
 .mediaAlbum {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 10;
-  width: min(360px, calc(100vw - 24px));
+  width: min(360px, calc(100vw - 30px));
+  max-height: calc(100dvh - 140px);
+  margin-top: 8px;
 }
 
 .albumToolbar {
@@ -138,6 +139,7 @@ watch(() => props.directory, () => { if (visible.value) refresh(); });
 
   .searchInput {
     flex: 1;
+    min-width: 0;
   }
 
   .kindSelect {
@@ -161,55 +163,6 @@ watch(() => props.directory, () => { if (visible.value) refresh(); });
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-}
-
-.albumCard {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 6px;
-  overflow: hidden;
-  cursor: pointer;
-  background: var(--el-fill-color-lighter);
-
-  &:hover {
-    border-color: var(--el-color-primary);
-  }
-}
-
-.cardThumb {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--el-text-color-secondary);
-  background: var(--el-fill-color);
-}
-
-.cardVideo {
-  background: #000;
-}
-
-.cardMeta {
-  display: flex;
-  flex-direction: column;
-  padding: 4px 6px;
-  gap: 2px;
-}
-
-.cardName {
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.cardKind {
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-  text-transform: uppercase;
 }
 
 .albumFooter {
